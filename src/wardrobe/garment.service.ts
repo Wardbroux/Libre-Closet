@@ -16,7 +16,10 @@ import { MultipartFile } from '@fastify/multipart';
 import { CreateGarmentDto } from './dto/create-garment.dto';
 import { UpdateGarmentDto } from './dto/update-garment.dto';
 import { SearchGarmentDto } from './dto/search-garment.dto';
-import { GarmentCategory } from './garment-category.enum';
+import {
+  DEFAULT_CATEGORY_PATHS,
+  GarmentCategory,
+} from './garment-category.enum';
 import { WardrobeShareService } from '../wardrobe-share/wardrobe-share.service';
 
 const CANONICAL_SIZES = [
@@ -46,6 +49,7 @@ export class GarmentService {
   ) {}
 
   resolveCategoryLabel(value: string, i18n: I18nContext): string {
+    if (value.toLowerCase() === 'footwear') return 'Shoes';
     const normalized = value.toLowerCase();
     if ((Object.values(GarmentCategory) as string[]).includes(normalized)) {
       return i18n.t(`lang.CATEGORY_${normalized.toUpperCase()}`);
@@ -59,8 +63,9 @@ export class GarmentService {
     viewOwner?: number,
   ): Promise<Garment[]> {
     const normalizedSize = this.normalizeSize(dto.size);
+    const categoryFilter = this.categoryFilter(dto.category);
     const searchConditions: FilterQuery<Garment> = {
-      ...(dto.category ? { category: dto.category } : {}),
+      ...(categoryFilter ? categoryFilter : {}),
       ...(dto.color ? { color: dto.color } : {}),
       ...(normalizedSize ? { size: normalizedSize } : {}),
       ...(dto.location ? { location: dto.location } : {}),
@@ -144,7 +149,7 @@ export class GarmentService {
 
     const garment = this.garmentRepository.create({
       name: dto.name,
-      category: dto.category,
+      category: this.normalizeCategory(dto.category) ?? dto.category,
       brand: dto.brand,
       color: dto.color,
       size: this.normalizeSize(dto.size),
@@ -204,7 +209,7 @@ export class GarmentService {
 
     const garment = this.garmentRepository.create({
       name: dto.name,
-      category: dto.category,
+      category: this.normalizeCategory(dto.category) ?? dto.category,
       brand: dto.brand,
       color: dto.color as any,
       size: this.normalizeSize(dto.size),
@@ -249,8 +254,13 @@ export class GarmentService {
     });
 
     const categories = [
-      ...new Set(garments.map((g) => g.category).filter(Boolean)),
-    ].sort();
+      ...new Set([
+        ...DEFAULT_CATEGORY_PATHS,
+        ...garments.map((g) => this.normalizeCategory(g.category)),
+      ]),
+    ]
+      .filter(Boolean)
+      .sort();
 
     const locations = [
       ...new Set(garments.map((g) => g.location).filter(Boolean) as string[]),
@@ -318,7 +328,7 @@ export class GarmentService {
     }
 
     garment.name = dto.name ?? garment.name;
-    garment.category = dto.category ?? garment.category;
+    garment.category = this.normalizeCategory(dto.category) ?? garment.category;
     if ('brand' in dto) garment.brand = dto.brand;
     if ('color' in dto) garment.color = dto.color;
     if ('size' in dto) garment.size = this.normalizeSize(dto.size);
@@ -406,6 +416,60 @@ export class GarmentService {
   private normalizeText(input?: string): string | undefined {
     const value = input?.trim();
     return value || undefined;
+  }
+
+  private normalizeCategory(input?: string): string | undefined {
+    const value = this.normalizeText(input);
+    if (!value) return undefined;
+    if (value.toLowerCase() === 'footwear') return 'Shoes > Sneakers';
+    return value
+      .split('>')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(' > ');
+  }
+
+  private categoryFilter(category?: string): FilterQuery<Garment> | undefined {
+    const value = category?.trim();
+    if (!value || value === 'All') return undefined;
+    if (value === 'Clothing') {
+      return {
+        $or: [
+          { category: { $like: 'Tops%' } },
+          { category: { $like: 'Hoodies & Sweaters%' } },
+          { category: { $like: 'Outerwear%' } },
+          { category: { $like: 'Bottoms%' } },
+          { category: { $like: 'Dresses%' } },
+        ],
+      };
+    }
+    if (value === 'Tops & T-shirts') {
+      return {
+        $or: [
+          { category: { $like: 'Tops%' } },
+          { category: { $like: 'Hoodies & Sweaters%' } },
+        ],
+      };
+    }
+    if (value === 'Trousers') {
+      return {
+        $or: [
+          { category: { $like: 'Bottoms > Trousers%' } },
+          { category: { $like: 'Bottoms > Shorts%' } },
+          { category: { $like: 'Bottoms > Skirts%' } },
+          { category: { $like: 'Bottoms > Skorts%' } },
+        ],
+      };
+    }
+    if (value === 'Jeans') return { category: { $like: 'Bottoms > Jeans%' } };
+    if (value === 'Shoes') {
+      return {
+        $or: [{ category: { $like: 'Shoes%' } }, { category: 'footwear' }],
+      };
+    }
+    return {
+      $or: [{ category: value }, { category: { $like: `${value} >%` } }],
+    };
   }
 
   private normalizeTags(input?: string): string | undefined {
