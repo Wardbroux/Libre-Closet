@@ -18,7 +18,11 @@ import {
 import { I18n, I18nContext } from 'nestjs-i18n';
 import { ConditionalAuthGuard } from '../auth/conditional-auth.guard';
 import { Payload } from '../auth/dto/payload.dto';
-import { TOP_LEVEL_CATEGORIES } from './garment-category.enum';
+import {
+  DEFAULT_CATEGORY_PATHS,
+  SIZE_GROUPS,
+  TOP_LEVEL_CATEGORIES,
+} from './garment-category.enum';
 import { GarmentColor } from './garment-color.enum';
 import { GarmentService } from './garment.service';
 import { WardrobeShareService } from '../wardrobe-share/wardrobe-share.service';
@@ -89,6 +93,7 @@ export class WardrobeController {
     return {
       garments,
       availableCategories,
+      categoryGroups: this.categoryGroups(filters.categories),
       activeCategory: query.category || 'All',
       categoryTabs: TOP_LEVEL_CATEGORIES.map((category) => ({
         label: category,
@@ -101,6 +106,7 @@ export class WardrobeController {
               }`,
       })),
       colors: Object.values(GarmentColor),
+      sizeGroups: SIZE_GROUPS,
       availableSizes: filters.sizes,
       availableLocations: filters.locations,
       availableTags: filters.tags,
@@ -136,6 +142,9 @@ export class WardrobeController {
       colors: Object.values(GarmentColor),
       garment: null,
       viewOwner,
+      categoryGroups: this.categoryGroups(filters.categories),
+      availableLocations: filters.locations,
+      sizeGroups: SIZE_GROUPS,
     };
   }
 
@@ -194,6 +203,36 @@ export class WardrobeController {
     return reply.redirect(`/wardrobe/${garment.id}${redirectSuffix}`, 302);
   }
 
+  @Get('settings')
+  @Render('wardrobe/settings')
+  async settings(@Req() req: FastifyRequest) {
+    const userId = this.userId(req);
+    const filters = await this.garmentService.findAvailableFilters(userId);
+    return {
+      locations: filters.locations,
+    };
+  }
+
+  @Post('settings/locations')
+  async createLocation(
+    @Body() body: { name?: string },
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ) {
+    await this.garmentService.createLocation(body.name ?? '', this.userId(req));
+    return reply.redirect('/wardrobe/settings', 302);
+  }
+
+  @Post('settings/locations/delete')
+  async deleteLocation(
+    @Body() body: { name?: string },
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ) {
+    await this.garmentService.removeLocation(body.name ?? '', this.userId(req));
+    return reply.redirect('/wardrobe/settings', 302);
+  }
+
   @Get(':id')
   @Render('wardrobe/show')
   async show(
@@ -241,7 +280,9 @@ export class WardrobeController {
       canClone,
       viewOwner: viewOwner ?? null,
       categories,
+      categoryGroups: this.categoryGroups(filters.categories),
       availableLocations: filters.locations,
+      sizeGroups: SIZE_GROUPS,
     };
   }
 
@@ -285,6 +326,9 @@ export class WardrobeController {
       colors: colorEnumValues,
       customColors,
       viewOwner: viewOwner ?? null,
+      categoryGroups: this.categoryGroups(filters.categories),
+      availableLocations: filters.locations,
+      sizeGroups: SIZE_GROUPS,
     };
   }
 
@@ -313,6 +357,9 @@ export class WardrobeController {
       categories,
       colors: Object.values(GarmentColor),
       viewOwner: viewOwner ?? null,
+      categoryGroups: this.categoryGroups(filters.categories),
+      availableLocations: filters.locations,
+      sizeGroups: SIZE_GROUPS,
     };
   }
 
@@ -497,5 +544,18 @@ export class WardrobeController {
     await this.garmentService.remove(id, userId);
     reply.header('HX-Redirect', '/wardrobe');
     return reply.send();
+  }
+
+  private categoryGroups(categories: string[]) {
+    const unique = [
+      ...new Set([...DEFAULT_CATEGORY_PATHS, ...categories]),
+    ].sort((a, b) => a.localeCompare(b));
+    const groups = new Map<string, { label: string; options: string[] }>();
+    for (const category of unique) {
+      const [group] = category.split('>').map((part) => part.trim());
+      if (!groups.has(group)) groups.set(group, { label: group, options: [] });
+      groups.get(group)?.options.push(category);
+    }
+    return [...groups.values()];
   }
 }
