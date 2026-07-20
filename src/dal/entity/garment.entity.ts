@@ -37,6 +37,12 @@ export class Garment extends ShareableId {
   @Property({ nullable: true })
   public size?: string;
 
+  @Property({ nullable: true })
+  public location?: string;
+
+  @Property({ nullable: true, columnType: 'text' })
+  public tags?: string;
+
   @Property({ type: Date, nullable: true })
   public dateAquired?: Date;
 
