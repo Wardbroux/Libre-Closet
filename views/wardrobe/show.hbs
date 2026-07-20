@@ -1,7 +1,5 @@
-{{>navbar}}
-
-<main class="min-h-screen bg-slate-950 px-4 pt-20 pb-28 text-slate-100">
-  <div class="mx-auto flex w-full max-w-6xl flex-col gap-7">
+<main class="min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-8">
+  <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
     <div class="flex items-center justify-between gap-3">
       <a
         href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
@@ -24,30 +22,17 @@
         Back to all items
       </a>
       {{#if canEdit}}
-      <a
-        href="/wardrobe/{{garment.id}}/edit{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+      <button
+        id="editItemToggle"
+        type="button"
         class="btn btn-outline btn-sm border-slate-600 bg-slate-900/70 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="size-4"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"
-          />
-        </svg>
         Edit item
-      </a>
+      </button>
       {{/if}}
     </div>
 
-    <section class="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]">
+    <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(390px,0.9fr)]">
       <div class="flex flex-col gap-4">
         <figure
           class="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30"
@@ -56,29 +41,16 @@
           <img
             src="/file/nobg/{{garment.photo.fileName}}"
             alt="{{garment.name}}"
-            class="h-full w-full object-contain p-5"
+            class="h-full w-full object-contain p-6"
           />
           {{else}}
           <div class="flex h-full w-full items-center justify-center text-slate-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1"
-              stroke="currentColor"
-              class="size-20"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M12 3v8.25"
-              />
-            </svg>
+            No photo
           </div>
           {{/if}}
         </figure>
 
-        <div class="grid grid-cols-5 gap-3">
+        <div class="grid max-w-xl grid-cols-5 gap-3">
           <div class="aspect-square rounded-lg border border-emerald-400 bg-slate-900 p-2">
             {{#if garment.photo}}
             <img
@@ -88,54 +60,39 @@
             />
             {{/if}}
           </div>
-          <div class="aspect-square rounded-lg border border-dashed border-slate-600 bg-slate-900/60"></div>
-          <div class="aspect-square rounded-lg border border-dashed border-slate-600 bg-slate-900/60"></div>
-          <div class="aspect-square rounded-lg border border-dashed border-slate-600 bg-slate-900/60"></div>
           {{#if canEdit}}
-          <a
-            href="/wardrobe/{{garment.id}}/edit{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+          <button
+            type="button"
             class="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300"
+            onclick="document.getElementById('editItemPanel')?.classList.remove('hidden')"
           >
             <span class="text-3xl leading-none">+</span>
             Add photo
-          </a>
+          </button>
           {{/if}}
         </div>
       </div>
 
-      <div class="flex flex-col gap-4">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
-              {{categoryLabel}}
-            </div>
-            <h1 class="text-3xl font-bold tracking-normal text-white">
-              {{#if garment.name}}{{garment.name}}{{else}}Untitled item{{/if}}
-            </h1>
+      <div class="flex flex-col gap-5">
+        <div>
+          <div class="mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
+            {{categoryLabel}}
           </div>
+          <h1 class="text-3xl font-bold tracking-normal text-white">
+            {{#if garment.name}}{{garment.name}}{{else}}Untitled item{{/if}}
+          </h1>
         </div>
 
-        <div class="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/50">
-          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-center gap-3 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7.5-6.04 7.5-12A7.5 7.5 0 0 0 4.5 9c0 5.96 7.5 12 7.5 12Z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              </svg>
-              Location
-            </div>
+        <div id="itemReadPanel" class="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/50">
+          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Location</div>
             <div class="justify-self-end rounded-lg border border-emerald-500/25 bg-emerald-500/15 px-4 py-2 font-medium text-emerald-200">
               {{#if garment.location}}{{garment.location}}{{else}}Unassigned{{/if}}
             </div>
           </div>
 
-          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-center gap-3 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5m-15 4.5h13.5m-12 4.5h10.5" />
-              </svg>
-              Category
-            </div>
+          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Category</div>
             <div class="flex flex-wrap items-center justify-end gap-2 text-emerald-200">
               {{#each (splitCategoryPath garment.category)}}
               <span>{{this}}</span>{{#unless @last}}<span class="text-slate-500">></span>{{/unless}}
@@ -143,55 +100,29 @@
             </div>
           </div>
 
-          {{#if garment.brand}}
-          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-center gap-3 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.169.659 1.591l8.591 8.591a2.25 2.25 0 0 0 3.182 0l4.318-4.318a2.25 2.25 0 0 0 0-3.182L11.159 3.659A2.25 2.25 0 0 0 9.568 3Z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
-              </svg>
-              Brand
-            </div>
-            <div class="justify-self-end font-medium text-white">{{garment.brand}}</div>
+          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Brand</div>
+            <div class="justify-self-end font-medium text-white">{{#if garment.brand}}{{garment.brand}}{{else}}-{{/if}}</div>
           </div>
-          {{/if}}
 
-          {{#if garment.color}}
-          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-center gap-3 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0 4.242 0l.708-.708a3 3 0 0 0-4.243-4.243l-.707.708a3 3 0 0 0 0 4.243Z" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M14.47 7.878a3 3 0 0 0-4.242 0l-.708.708a3 3 0 0 0 4.243 4.243l.707-.708a3 3 0 0 0 0-4.243Z" />
-              </svg>
-              Color
-            </div>
+          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Colour</div>
             <div class="flex flex-wrap justify-end gap-2">
               {{#each (splitCsv garment.color)}}
               <span class="rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white">{{this}}</span>
               {{/each}}
             </div>
           </div>
-          {{/if}}
 
           {{#if garment.size}}
-          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-center gap-3 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 8.25h16.5M5.25 8.25v7.5A2.25 2.25 0 0 0 7.5 18h9a2.25 2.25 0 0 0 2.25-2.25v-7.5" />
-              </svg>
-              Size
-            </div>
+          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Size</div>
             <div class="justify-self-end font-medium text-white">{{garment.size}}</div>
           </div>
           {{/if}}
 
-          <div class="grid gap-3 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-center gap-3 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.169.659 1.591l8.591 8.591a2.25 2.25 0 0 0 3.182 0l4.318-4.318a2.25 2.25 0 0 0 0-3.182L11.159 3.659A2.25 2.25 0 0 0 9.568 3Z" />
-              </svg>
-              Tags
-            </div>
+          <div class="grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Tags</div>
             <div class="flex flex-wrap justify-start gap-2 sm:justify-end">
               {{#each (splitCsv garment.tags)}}
               <span class="rounded-md border px-3 py-1 text-sm" style="{{tagStyle @index}}">{{this}}</span>
@@ -203,20 +134,90 @@
           </div>
 
           {{#if garment.notes}}
-          <div class="grid gap-3 px-1 py-4 sm:grid-cols-[180px_1fr]">
-            <div class="flex items-start gap-3 pt-2 text-slate-300">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-7.5A2.25 2.25 0 0 0 17.25 4.5H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5A2.25 2.25 0 0 0 6.75 19.5h7.5" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="m15 19.5 4.5-4.5" />
-              </svg>
-              Notes
-            </div>
+          <div class="grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]">
+            <div class="text-slate-300">Notes</div>
             <p class="rounded-lg border border-slate-800 bg-slate-900/70 p-4 text-slate-200">
               {{garment.notes}}
             </p>
           </div>
           {{/if}}
         </div>
+
+        {{#if canEdit}}
+        <section id="editItemPanel" class="hidden rounded-lg border border-emerald-500/30 bg-slate-900 p-4 shadow-lg shadow-emerald-950/20">
+          <form
+            method="POST"
+            action="/wardrobe/{{garment.id}}{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+            class="grid gap-4"
+          >
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="form-control">
+                <span class="label-text mb-1 text-slate-300">Name</span>
+                <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="input input-bordered border-slate-700 bg-slate-950" />
+              </label>
+              <label class="form-control">
+                <span class="label-text mb-1 text-slate-300">Brand</span>
+                <input name="brand" value="{{garment.brand}}" placeholder="Puma" class="input input-bordered border-slate-700 bg-slate-950" />
+              </label>
+              <label class="form-control">
+                <span class="label-text mb-1 text-slate-300">Location</span>
+                <input name="location" list="location-suggestions" value="{{garment.location}}" placeholder="Storage locker" class="input input-bordered border-slate-700 bg-slate-950" />
+              </label>
+              <label class="form-control">
+                <span class="label-text mb-1 text-slate-300">Category</span>
+                <input name="category" list="category-suggestions" value="{{garment.category}}" placeholder="Shoes > Sneakers" required class="input input-bordered border-slate-700 bg-slate-950" />
+              </label>
+              <label class="form-control">
+                <span class="label-text mb-1 text-slate-300">Colour</span>
+                <input name="color" value="{{formatColors garment.color}}" placeholder="Green, White" class="input input-bordered border-slate-700 bg-slate-950" />
+              </label>
+              <label class="form-control">
+                <span class="label-text mb-1 text-slate-300">Size</span>
+                <input name="size" value="{{garment.size}}" placeholder="43 EU" class="input input-bordered border-slate-700 bg-slate-950" />
+              </label>
+            </div>
+            <label class="form-control">
+              <span class="label-text mb-1 text-slate-300">Tags</span>
+              <input name="tags" value="{{garment.tags}}" placeholder="Hightop, Chunky, Platform, Casual" class="input input-bordered border-slate-700 bg-slate-950" />
+            </label>
+            <label class="form-control">
+              <span class="label-text mb-1 text-slate-300">Notes</span>
+              <textarea name="notes" rows="3" placeholder="Comfortable everyday sneakers." class="textarea textarea-bordered border-slate-700 bg-slate-950">{{garment.notes}}</textarea>
+            </label>
+            <datalist id="category-suggestions">
+              {{#each categories}}
+              <option value="{{this.value}}"></option>
+              {{/each}}
+            </datalist>
+            <datalist id="location-suggestions">
+              {{#each availableLocations}}
+              <option value="{{this}}"></option>
+              {{/each}}
+            </datalist>
+            <div class="flex justify-end gap-3">
+              <button type="button" class="btn btn-ghost" onclick="document.getElementById('editItemPanel')?.classList.add('hidden')">Cancel</button>
+              <button type="submit" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500">Save changes</button>
+            </div>
+          </form>
+
+          <form
+            hx-post="/wardrobe/{{garment.id}}/photo{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+            hx-encoding="multipart/form-data"
+            hx-indicator="#loading"
+            hx-target="main"
+            hx-select="main"
+            hx-swap="outerHTML"
+            class="mt-5 border-t border-slate-800 pt-4"
+          >
+            <div class="flex flex-wrap items-center gap-3">
+              <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp" />
+              <input type="file" id="photoInput" name="photo" class="file-input file-input-bordered file-input-sm border-slate-700 bg-slate-950" accept="image/jpeg,image/png,image/gif,image/webp" />
+              <button id="photoBtn" class="btn btn-outline btn-sm border-slate-700" disabled>{{#if garment.photo}}Update photo{{else}}Add photo{{/if}}</button>
+              <span id="loading" class="htmx-indicator loading loading-ring loading-sm"></span>
+            </div>
+          </form>
+        </section>
+        {{/if}}
       </div>
     </section>
 
@@ -260,6 +261,14 @@
       </div>
     </section>
   </div>
-</main>
 
-{{>dock}}
+  <script type="module">
+    import { wireUpPhotoInput } from '/js/background-removal.js';
+
+    document.getElementById('editItemToggle')?.addEventListener('click', () => {
+      document.getElementById('editItemPanel')?.classList.toggle('hidden');
+    });
+
+    wireUpPhotoInput();
+  </script>
+</main>
