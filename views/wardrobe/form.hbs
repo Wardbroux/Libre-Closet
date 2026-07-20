@@ -48,21 +48,15 @@
       <label class="label"
         ><span class="label-text">{{t 'lang.CATEGORY'}} *</span></label
       >
-      <input
-        type="text"
-        name="category"
-        list="category-suggestions"
-        class="input input-bordered w-full"
-        value="{{#if garment}}{{garment.category}}{{/if}}"
-        required
-        placeholder="Shoes > Sneakers"
-        autocomplete="off"
-      />
-      <datalist id="category-suggestions">
-        {{#each categories}}
-        <option value="{{this.value}}"></option>
+      <select name="category" class="select select-bordered w-full" required>
+        {{#each categoryGroups}}
+        <optgroup label="{{this.label}}">
+          {{#each this.options}}
+          <option value="{{this}}" {{#ifEquals this ../../garment.category}}selected{{/ifEquals}}>{{this}}</option>
+          {{/each}}
+        </optgroup>
         {{/each}}
-      </datalist>
+      </select>
     </div>
 
     <div class="form-control">
@@ -72,10 +66,16 @@
       <input
         type="text"
         name="location"
+        list="location-suggestions"
         class="input input-bordered"
         value="{{#if garment}}{{garment.location}}{{/if}}"
         placeholder="Home, Storage locker, Gym bag..."
       />
+      <datalist id="location-suggestions">
+        {{#each availableLocations}}
+        <option value="{{this}}"></option>
+        {{/each}}
+      </datalist>
     </div>
 
     <div class="form-control">
@@ -97,13 +97,16 @@
       <label class="label"
         ><span class="label-text">{{t 'lang.SIZE'}}</span></label
       >
-      <input
-        type="text"
-        name="size"
-        class="input input-bordered"
-        value="{{#if garment}}{{garment.size}}{{/if}}"
-        placeholder="M, 32, One Size…"
-      />
+      <select name="size" class="select select-bordered">
+        <option value="">Select size</option>
+        {{#each sizeGroups}}
+        <optgroup label="{{this.label}}">
+          {{#each this.sizes}}
+          <option value="{{this}}" {{#ifEquals this ../../garment.size}}selected{{/ifEquals}}>{{this}}</option>
+          {{/each}}
+        </optgroup>
+        {{/each}}
+      </select>
     </div>
 
     <div class="form-control">
