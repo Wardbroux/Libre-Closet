@@ -43,12 +43,20 @@
       <button type="submit" class="btn btn-ghost btn-sm border border-slate-700">Search</button>
     </form>
 
-    {{#if canEdit}}
-    <a href="/wardrobe/new{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500">
-      <span class="text-2xl leading-none">+</span>
-      New item
-    </a>
-    {{/if}}
+    <div class="flex items-center gap-2">
+      <a href="/wardrobe/settings" class="btn btn-ghost btn-square border border-slate-800 bg-slate-900 text-slate-200" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.661.837.145.063.287.13.427.203.33.17.724.15 1.032-.064l1.055-.732a1.125 1.125 0 0 1 1.45.12l1.833 1.833c.389.389.44 1.002.12 1.45l-.732 1.055c-.214.308-.234.702-.064 1.032.073.14.14.282.203.427.151.348.463.598.837.661l1.281.213c.542.09.94.56.94 1.11v2.592c0 .55-.398 1.02-.94 1.11l-1.281.213a1.125 1.125 0 0 0-.837.661c-.063.145-.13.287-.203.427-.17.33-.15.724.064 1.032l.732 1.055c.32.448.269 1.061-.12 1.45l-1.833 1.833a1.125 1.125 0 0 1-1.45.12l-1.055-.732a1.125 1.125 0 0 0-1.032-.064c-.14.073-.282.14-.427.203a1.125 1.125 0 0 0-.661.837l-.213 1.281c-.09.542-.56.94-1.11.94h-2.592c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.125 1.125 0 0 0-.661-.837 7.03 7.03 0 0 1-.427-.203 1.125 1.125 0 0 0-1.032.064l-1.055.732a1.125 1.125 0 0 1-1.45-.12l-1.833-1.833a1.125 1.125 0 0 1-.12-1.45l.732-1.055c.214-.308.234-.702.064-1.032a7.03 7.03 0 0 1-.203-.427 1.125 1.125 0 0 0-.837-.661l-1.281-.213A1.125 1.125 0 0 1 1.5 15.958v-2.592c0-.55.398-1.02.94-1.11l1.281-.213c.374-.063.686-.313.837-.661.063-.145.13-.287.203-.427.17-.33.15-.724-.064-1.032L3.965 8.868a1.125 1.125 0 0 1 .12-1.45l1.833-1.833a1.125 1.125 0 0 1 1.45-.12l1.055.732c.308.214.702.234 1.032.064.14-.073.282-.14.427-.203.348-.151.598-.463.661-.837l.213-1.281Z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+      </a>
+      {{#if canEdit}}
+      <a href="/wardrobe/new{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500">
+        <span class="text-2xl leading-none">+</span>
+        New item
+      </a>
+      {{/if}}
+    </div>
   </header>
 
   {{#if sharedWardrobes.length}}
@@ -73,21 +81,41 @@
     {{/each}}
   </nav>
 
-  <form method="get" action="/wardrobe" id="filter-form" class="mb-5 flex flex-wrap items-center gap-3">
+  <form method="get" action="/wardrobe" id="filter-form" class="mb-5 flex flex-wrap items-start gap-3">
     {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
     <input type="hidden" name="keyword" value="{{search.keyword}}">
-    <select name="category" class="select select-bordered w-44 border-slate-700 bg-slate-900" onchange="this.form.submit()">
-      <option value="">Category</option>
-      {{#each availableCategories}}
-      <option value="{{this.value}}" {{#ifEquals this.value ../search.category}}selected{{/ifEquals}}>{{this.label}}</option>
-      {{/each}}
-    </select>
-    <select name="size" class="select select-bordered w-32 border-slate-700 bg-slate-900" onchange="this.form.submit()">
-      <option value="">Size</option>
-      {{#each availableSizes}}
-      <option value="{{this}}" {{#ifEquals this ../search.size}}selected{{/ifEquals}}>{{this}}</option>
-      {{/each}}
-    </select>
+
+    <details class="dropdown">
+      <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">Category</summary>
+      <div class="dropdown-content z-30 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-3 shadow-xl">
+        <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="block rounded-md px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">All</a>
+        {{#each categoryGroups}}
+        <details class="group border-t border-slate-800 py-1" {{#if @first}}open{{/if}}>
+          <summary class="cursor-pointer list-none rounded-md px-3 py-2 font-semibold text-white hover:bg-slate-800">{{this.label}}</summary>
+          <div class="pl-3">
+            {{#each this.options}}
+            <a href="/wardrobe?category={{uri this}}{{#if ../../viewOwner}}&ownerId={{../../viewOwner}}{{/if}}" class="block rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-emerald-500/15 hover:text-emerald-200">{{this}}</a>
+            {{/each}}
+          </div>
+        </details>
+        {{/each}}
+      </div>
+    </details>
+
+    <details class="dropdown">
+      <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">Size</summary>
+      <div class="dropdown-content z-30 mt-2 max-h-96 w-96 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-4 shadow-xl">
+        {{#each sizeGroups}}
+        <h3 class="mb-3 mt-2 font-semibold text-white">{{this.label}}</h3>
+        <div class="mb-4 grid grid-cols-2 gap-2">
+          {{#each this.sizes}}
+          <a href="/wardrobe?size={{uri this}}{{#if ../../viewOwner}}&ownerId={{../../viewOwner}}{{/if}}" class="rounded-md border border-slate-800 px-4 py-3 text-center text-slate-200 hover:border-emerald-500 hover:bg-emerald-500/15">{{this}}</a>
+          {{/each}}
+        </div>
+        {{/each}}
+      </div>
+    </details>
+
     <select name="color" class="select select-bordered w-36 border-slate-700 bg-slate-900" onchange="this.form.submit()">
       <option value="">Colour</option>
       {{#each colors}}
