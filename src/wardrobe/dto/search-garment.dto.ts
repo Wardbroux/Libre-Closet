@@ -6,5 +6,7 @@ export interface SearchGarmentDto {
   color?: GarmentColor;
   brand?: string;
   size?: string;
+  location?: string;
+  tag?: string;
   archived?: string;
 }
