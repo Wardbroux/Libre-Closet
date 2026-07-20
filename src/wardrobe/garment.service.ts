@@ -11,12 +11,14 @@ import { I18nContext } from 'nestjs-i18n';
 import { Garment } from '../dal/entity/garment.entity';
 import { File } from '../dal/entity/file.entity';
 import { User } from '../dal/entity/user.entity';
+import { WardrobeLocation } from '../dal/entity/wardrobe-location.entity';
 import { FileService } from '../file/file-service.abstract';
 import { MultipartFile } from '@fastify/multipart';
 import { CreateGarmentDto } from './dto/create-garment.dto';
 import { UpdateGarmentDto } from './dto/update-garment.dto';
 import { SearchGarmentDto } from './dto/search-garment.dto';
 import {
+  DEFAULT_LOCATIONS,
   DEFAULT_CATEGORY_PATHS,
   GarmentCategory,
 } from './garment-category.enum';
@@ -44,6 +46,8 @@ export class GarmentService {
     private readonly garmentRepository: EntityRepository<Garment>,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
+    @InjectRepository(WardrobeLocation)
+    private readonly locationRepository: EntityRepository<WardrobeLocation>,
     private readonly fileService: FileService,
     private readonly shareService: WardrobeShareService,
   ) {}
@@ -236,7 +240,10 @@ export class GarmentService {
     tags: string[];
   }> {
     const where = userId != null ? { owner: { id: userId } } : { owner: null };
-    const garments = await this.garmentRepository.find(where);
+    const [garments, savedLocations] = await Promise.all([
+      this.garmentRepository.find(where),
+      this.locationRepository.find(where, { orderBy: { name: 'ASC' } }),
+    ]);
 
     const brands = [
       ...new Set(garments.map((g) => g.brand).filter(Boolean) as string[]),
@@ -263,7 +270,11 @@ export class GarmentService {
       .sort();
 
     const locations = [
-      ...new Set(garments.map((g) => g.location).filter(Boolean) as string[]),
+      ...new Set([
+        ...DEFAULT_LOCATIONS,
+        ...savedLocations.map((location) => location.name),
+        ...(garments.map((g) => g.location).filter(Boolean) as string[]),
+      ]),
     ].sort();
     const tags = [
       ...new Set(
@@ -272,6 +283,38 @@ export class GarmentService {
     ].sort((a, b) => a.localeCompare(b));
 
     return { brands, sizes, categories, locations, tags };
+  }
+
+  async createLocation(name: string, userId?: number): Promise<void> {
+    const normalizedName = this.normalizeText(name);
+    if (!normalizedName) return;
+    const ownerFilter =
+      userId != null ? { owner: { id: userId } } : { owner: null };
+    const existing = await this.locationRepository.findOne({
+      name: normalizedName,
+      ...ownerFilter,
+    });
+    if (existing) return;
+
+    const location = this.locationRepository.create({ name: normalizedName });
+    if (userId != null) {
+      const user = await this.userRepository.findOneOrFail(userId);
+      location.owner = user as any;
+    }
+    await this.locationRepository.getEntityManager().persistAndFlush(location);
+  }
+
+  async removeLocation(name: string, userId?: number): Promise<void> {
+    const normalizedName = this.normalizeText(name);
+    if (!normalizedName) return;
+    const ownerFilter =
+      userId != null ? { owner: { id: userId } } : { owner: null };
+    const location = await this.locationRepository.findOne({
+      name: normalizedName,
+      ...ownerFilter,
+    });
+    if (!location) return;
+    await this.locationRepository.getEntityManager().removeAndFlush(location);
   }
 
   async update(
@@ -445,10 +488,7 @@ export class GarmentService {
     }
     if (value === 'Tops & T-shirts') {
       return {
-        $or: [
-          { category: { $like: 'Tops%' } },
-          { category: { $like: 'Hoodies & Sweaters%' } },
-        ],
+        $or: [{ category: { $like: 'Tops%' } }],
       };
     }
     if (value === 'Trousers') {
