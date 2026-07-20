@@ -18,7 +18,7 @@ import {
 import { I18n, I18nContext } from 'nestjs-i18n';
 import { ConditionalAuthGuard } from '../auth/conditional-auth.guard';
 import { Payload } from '../auth/dto/payload.dto';
-import { GarmentCategory } from './garment-category.enum';
+import { TOP_LEVEL_CATEGORIES } from './garment-category.enum';
 import { GarmentColor } from './garment-color.enum';
 import { GarmentService } from './garment.service';
 import { WardrobeShareService } from '../wardrobe-share/wardrobe-share.service';
@@ -89,6 +89,17 @@ export class WardrobeController {
     return {
       garments,
       availableCategories,
+      activeCategory: query.category || 'All',
+      categoryTabs: TOP_LEVEL_CATEGORIES.map((category) => ({
+        label: category,
+        active: (query.category || 'All') === category,
+        href:
+          category === 'All'
+            ? `/wardrobe${viewOwner ? `?ownerId=${viewOwner}` : ''}`
+            : `/wardrobe?category=${encodeURIComponent(category)}${
+                viewOwner ? `&ownerId=${viewOwner}` : ''
+              }`,
+      })),
       colors: Object.values(GarmentColor),
       availableSizes: filters.sizes,
       availableLocations: filters.locations,
@@ -116,11 +127,7 @@ export class WardrobeController {
     const filters = await this.garmentService.findAvailableFilters(
       viewOwner ?? userId,
     );
-    const enumValues = Object.values(GarmentCategory) as string[];
-    const customCategories = filters.categories.filter(
-      (c) => !enumValues.includes(c),
-    );
-    const categories = [...enumValues, ...customCategories].map((value) => ({
+    const categories = filters.categories.map((value) => ({
       value,
       label: this.garmentService.resolveCategoryLabel(value, i18n),
     }));
@@ -197,7 +204,14 @@ export class WardrobeController {
   ) {
     const userId = this.userId(req);
     const viewOwner = ownerId ? parseInt(ownerId, 10) : undefined;
-    const garment = await this.garmentService.findOne(id, userId, viewOwner);
+    const [garment, filters] = await Promise.all([
+      this.garmentService.findOne(id, userId, viewOwner),
+      this.garmentService.findAvailableFilters(viewOwner ?? userId),
+    ]);
+    const categories = filters.categories.map((value) => ({
+      value,
+      label: this.garmentService.resolveCategoryLabel(value, i18n),
+    }));
 
     let canEdit = true;
     let canDelete = true;
@@ -226,6 +240,8 @@ export class WardrobeController {
       canDelete,
       canClone,
       viewOwner: viewOwner ?? null,
+      categories,
+      availableLocations: filters.locations,
     };
   }
 
@@ -249,11 +265,7 @@ export class WardrobeController {
       this.garmentService.findOne(id, userId, viewOwner),
       this.garmentService.findAvailableFilters(viewOwner ?? userId),
     ]);
-    const enumValues = Object.values(GarmentCategory) as string[];
-    const customCategories = filters.categories.filter(
-      (c) => !enumValues.includes(c),
-    );
-    const categories = [...enumValues, ...customCategories].map((value) => ({
+    const categories = filters.categories.map((value) => ({
       value,
       label: this.garmentService.resolveCategoryLabel(value, i18n),
     }));
@@ -290,11 +302,7 @@ export class WardrobeController {
       this.garmentService.findOne(id, userId, viewOwner),
       this.garmentService.findAvailableFilters(viewOwner ?? userId),
     ]);
-    const enumValues = Object.values(GarmentCategory) as string[];
-    const customCategories = filters.categories.filter(
-      (c) => !enumValues.includes(c),
-    );
-    const categories = [...enumValues, ...customCategories].map((value) => ({
+    const categories = filters.categories.map((value) => ({
       value,
       label: this.garmentService.resolveCategoryLabel(value, i18n),
     }));
