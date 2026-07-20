@@ -10,9 +10,7 @@ import { WardrobeShareModule } from '../wardrobe-share/wardrobe-share.module';
 import { GarmentService } from './garment.service';
 import { OutfitService } from './outfit.service';
 import { CalendarService } from './calendar.service';
-import { CalendarController } from './calendar.controller';
 import { WardrobeController } from './wardrobe.controller';
-import { OutfitController } from './outfit.controller';
 
 @Module({
   imports: [
@@ -21,7 +19,7 @@ import { OutfitController } from './outfit.controller';
     WardrobeShareModule,
     MikroOrmModule.forFeature([Garment, Outfit, OutfitCalendar, User]),
   ],
-  controllers: [WardrobeController, OutfitController, CalendarController],
+  controllers: [WardrobeController],
   providers: [GarmentService, OutfitService, CalendarService],
   exports: [GarmentService, OutfitService, CalendarService],
 })
