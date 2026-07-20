@@ -55,7 +55,7 @@
         class="input input-bordered w-full"
         value="{{#if garment}}{{garment.category}}{{/if}}"
         required
-        placeholder="{{t 'lang.TYPE_OR_SELECT_CATEGORY'}}"
+        placeholder="Shoes > Sneakers"
         autocomplete="off"
       />
       <datalist id="category-suggestions">
@@ -63,6 +63,19 @@
         <option value="{{this.value}}"></option>
         {{/each}}
       </datalist>
+    </div>
+
+    <div class="form-control">
+      <label class="label"
+        ><span class="label-text">Location</span></label
+      >
+      <input
+        type="text"
+        name="location"
+        class="input input-bordered"
+        value="{{#if garment}}{{garment.location}}{{/if}}"
+        placeholder="Home, Storage locker, Gym bag..."
+      />
     </div>
 
     <div class="form-control">
@@ -91,6 +104,22 @@
         value="{{#if garment}}{{garment.size}}{{/if}}"
         placeholder="M, 32, One Size…"
       />
+    </div>
+
+    <div class="form-control">
+      <label class="label"
+        ><span class="label-text">Tags</span></label
+      >
+      <input
+        type="text"
+        name="tags"
+        class="input input-bordered"
+        value="{{#if garment}}{{garment.tags}}{{/if}}"
+        placeholder="Hightop, Chunky, Platform, Casual"
+      />
+      <div class="label">
+        <span class="label-text-alt">Separate tags with commas.</span>
+      </div>
     </div>
 
     <div class="form-control">
