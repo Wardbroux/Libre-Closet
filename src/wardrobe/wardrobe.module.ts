@@ -4,6 +4,7 @@ import { Garment } from '../dal/entity/garment.entity';
 import { Outfit } from '../dal/entity/outfit.entity';
 import { OutfitCalendar } from '../dal/entity/outfit-calendar.entity';
 import { User } from '../dal/entity/user.entity';
+import { WardrobeLocation } from '../dal/entity/wardrobe-location.entity';
 import { FileModule } from '../file/file.module';
 import { AuthModule } from '../auth/auth.module';
 import { WardrobeShareModule } from '../wardrobe-share/wardrobe-share.module';
@@ -17,7 +18,13 @@ import { WardrobeController } from './wardrobe.controller';
     AuthModule,
     FileModule,
     WardrobeShareModule,
-    MikroOrmModule.forFeature([Garment, Outfit, OutfitCalendar, User]),
+    MikroOrmModule.forFeature([
+      Garment,
+      Outfit,
+      OutfitCalendar,
+      User,
+      WardrobeLocation,
+    ]),
   ],
   controllers: [WardrobeController],
   providers: [GarmentService, OutfitService, CalendarService],
