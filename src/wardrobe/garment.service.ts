@@ -63,6 +63,8 @@ export class GarmentService {
       ...(dto.category ? { category: dto.category } : {}),
       ...(dto.color ? { color: dto.color } : {}),
       ...(normalizedSize ? { size: normalizedSize } : {}),
+      ...(dto.location ? { location: dto.location } : {}),
+      ...(dto.tag ? { tags: { $like: `%${dto.tag}%` } } : {}),
       ...(dto.archived !== 'true' ? { archived: false } : {}),
       ...(dto.keyword
         ? {
@@ -70,6 +72,8 @@ export class GarmentService {
               { name: { $like: `%${dto.keyword}%` } },
               { notes: { $like: `%${dto.keyword}%` } },
               { brand: { $like: `%${dto.keyword}%` } },
+              { location: { $like: `%${dto.keyword}%` } },
+              { tags: { $like: `%${dto.keyword}%` } },
             ],
           }
         : {}),
@@ -144,6 +148,8 @@ export class GarmentService {
       brand: dto.brand,
       color: dto.color,
       size: this.normalizeSize(dto.size),
+      location: this.normalizeText(dto.location),
+      tags: this.normalizeTags(dto.tags),
       notes: dto.notes,
       washingDetails: dto.washingDetails,
       dateAquired: dto.dateAquired ? new Date(dto.dateAquired) : undefined,
@@ -167,6 +173,8 @@ export class GarmentService {
       brand?: string;
       color?: string;
       size?: string;
+      location?: string;
+      tags?: string;
       notes?: string;
     },
     userId?: number,
@@ -200,6 +208,8 @@ export class GarmentService {
       brand: dto.brand,
       color: dto.color as any,
       size: this.normalizeSize(dto.size),
+      location: this.normalizeText(dto.location),
+      tags: this.normalizeTags(dto.tags),
       notes: dto.notes,
       photo: photo ?? undefined,
     });
@@ -217,6 +227,8 @@ export class GarmentService {
     brands: string[];
     sizes: string[];
     categories: string[];
+    locations: string[];
+    tags: string[];
   }> {
     const where = userId != null ? { owner: { id: userId } } : { owner: null };
     const garments = await this.garmentRepository.find(where);
@@ -240,7 +252,16 @@ export class GarmentService {
       ...new Set(garments.map((g) => g.category).filter(Boolean)),
     ].sort();
 
-    return { brands, sizes, categories };
+    const locations = [
+      ...new Set(garments.map((g) => g.location).filter(Boolean) as string[]),
+    ].sort();
+    const tags = [
+      ...new Set(
+        garments.flatMap((g) => this.parseTags(g.tags)).filter(Boolean),
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+
+    return { brands, sizes, categories, locations, tags };
   }
 
   async update(
@@ -301,6 +322,8 @@ export class GarmentService {
     if ('brand' in dto) garment.brand = dto.brand;
     if ('color' in dto) garment.color = dto.color;
     if ('size' in dto) garment.size = this.normalizeSize(dto.size);
+    if ('location' in dto) garment.location = this.normalizeText(dto.location);
+    if ('tags' in dto) garment.tags = this.normalizeTags(dto.tags);
     if ('notes' in dto) garment.notes = dto.notes;
     if ('washingDetails' in dto) garment.washingDetails = dto.washingDetails;
     if ('dateAquired' in dto)
@@ -378,5 +401,31 @@ export class GarmentService {
     if (['xs', 'xsmall'].includes(s)) return 'X-Small';
     if (['xxs', '2xs', '2xsmall', 'xxsmall'].includes(s)) return 'XX-Small';
     return input.trim();
+  }
+
+  private normalizeText(input?: string): string | undefined {
+    const value = input?.trim();
+    return value || undefined;
+  }
+
+  private normalizeTags(input?: string): string | undefined {
+    const tags = this.parseTags(input);
+    if (!tags.length) return undefined;
+    return [...new Set(tags.map((tag) => this.titleTag(tag)))].join(',');
+  }
+
+  private parseTags(input?: string): string[] {
+    if (!input) return [];
+    return input
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  private titleTag(input: string): string {
+    return input
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 }
