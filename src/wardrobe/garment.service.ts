@@ -18,7 +18,6 @@ import { CreateGarmentDto } from './dto/create-garment.dto';
 import { UpdateGarmentDto } from './dto/update-garment.dto';
 import { SearchGarmentDto } from './dto/search-garment.dto';
 import {
-  DEFAULT_LOCATIONS,
   DEFAULT_CATEGORY_PATHS,
   GarmentCategory,
 } from './garment-category.enum';
@@ -271,7 +270,6 @@ export class GarmentService {
 
     const locations = [
       ...new Set([
-        ...DEFAULT_LOCATIONS,
         ...savedLocations.map((location) => location.name),
         ...(garments.map((g) => g.location).filter(Boolean) as string[]),
       ]),

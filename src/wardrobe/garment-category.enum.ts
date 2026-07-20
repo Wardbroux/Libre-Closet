@@ -62,8 +62,6 @@ export const TOP_LEVEL_CATEGORIES = [
   'Hoodies & Sweaters',
 ];
 
-export const DEFAULT_LOCATIONS = ['Home', 'Storage locker', 'Laundry'];
-
 export const SIZE_GROUPS = [
   {
     label: "Men's sizes",

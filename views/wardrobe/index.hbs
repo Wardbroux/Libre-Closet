@@ -84,32 +84,49 @@
   <form method="get" action="/wardrobe" id="filter-form" class="mb-5 flex flex-wrap items-start gap-3">
     {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
     <input type="hidden" name="keyword" value="{{search.keyword}}">
+    <input type="hidden" name="category" value="{{search.category}}">
+    <input type="hidden" name="location" value="{{search.location}}">
+    <input type="hidden" name="size" value="{{search.size}}">
 
     <details class="dropdown">
-      <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">Category</summary>
-      <div class="dropdown-content z-30 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-3 shadow-xl">
-        <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="block rounded-md px-3 py-2 text-sm text-slate-200 hover:bg-slate-800">All</a>
-        {{#each categoryGroups}}
-        <details class="group border-t border-slate-800 py-1" {{#if @first}}open{{/if}}>
-          <summary class="cursor-pointer list-none rounded-md px-3 py-2 font-semibold text-white hover:bg-slate-800">{{this.label}}</summary>
-          <div class="pl-3">
-            {{#each this.options}}
-            <a href="/wardrobe?category={{uri this}}{{#if ../../viewOwner}}&ownerId={{../../viewOwner}}{{/if}}" class="block rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-emerald-500/15 hover:text-emerald-200">{{this}}</a>
-            {{/each}}
-          </div>
-        </details>
-        {{/each}}
+      <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">
+        {{#if search.category}}{{search.category}}{{else}}Category{{/if}}
+      </summary>
+      <div class="dropdown-content z-30 mt-2 w-80 rounded-lg border border-slate-800 bg-slate-950 p-3 shadow-xl">
+        {{#if categoryPanel.breadcrumbs.length}}
+        <div class="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3 text-xs text-slate-400">
+          {{#each categoryPanel.breadcrumbs}}
+          <a href="{{this.href}}" class="hover:text-emerald-300">{{this.label}}</a>
+          {{#unless @last}}<span>/</span>{{/unless}}
+          {{/each}}
+        </div>
+        {{else}}
+        <div class="mb-3 border-b border-slate-800 pb-3 text-sm font-semibold text-white">Choose a category</div>
+        {{/if}}
+        <div class="space-y-1">
+          {{#each categoryPanel.options}}
+          <a href="{{this.href}}" class="flex items-center justify-between rounded-md px-3 py-3 text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200">
+            <span>{{this.label}}</span>
+            {{#if this.hasChildren}}<span class="text-slate-500">&gt;</span>{{/if}}
+          </a>
+          {{/each}}
+        </div>
+        {{#unless categoryPanel.options.length}}
+        <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="block rounded-md px-3 py-3 text-sm text-slate-300 hover:bg-slate-800">
+          Back
+        </a>
+        {{/unless}}
       </div>
     </details>
 
     <details class="dropdown">
       <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">Size</summary>
       <div class="dropdown-content z-30 mt-2 max-h-96 w-96 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-4 shadow-xl">
-        {{#each sizeGroups}}
+        {{#each dashboardSizeGroups}}
         <h3 class="mb-3 mt-2 font-semibold text-white">{{this.label}}</h3>
         <div class="mb-4 grid grid-cols-2 gap-2">
           {{#each this.sizes}}
-          <a href="/wardrobe?size={{uri this}}{{#if ../../viewOwner}}&ownerId={{../../viewOwner}}{{/if}}" class="rounded-md border border-slate-800 px-4 py-3 text-center text-slate-200 hover:border-emerald-500 hover:bg-emerald-500/15">{{this}}</a>
+          <a href="{{this.href}}" class="rounded-md border px-4 py-3 text-center {{#if this.active}}border-emerald-400 bg-emerald-500/15 text-emerald-100{{else}}border-slate-800 text-slate-200 hover:border-emerald-500 hover:bg-emerald-500/15{{/if}}">{{this.label}}</a>
           {{/each}}
         </div>
         {{/each}}
@@ -128,18 +145,37 @@
       <option value="{{this}}" {{#ifEquals this ../search.tag}}selected{{/ifEquals}}>{{this}}</option>
       {{/each}}
     </select>
-    <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="btn btn-ghost text-slate-400">Clear filters</a>
   </form>
+
+  {{#if filterChips.length}}
+  <div class="mb-5 flex flex-wrap items-center gap-3">
+    {{#each filterChips}}
+    <a href="{{this.href}}" class="inline-flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100 hover:border-emerald-400 hover:bg-emerald-500/20">
+      {{this.label}}
+      <span class="text-lg leading-none text-slate-400">&times;</span>
+    </a>
+    {{/each}}
+    <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="ml-auto text-sm text-cyan-300 hover:text-cyan-200">Clear filters</a>
+  </div>
+  {{/if}}
 
   {{#if availableLocations.length}}
   <nav class="mb-5 flex w-full max-w-3xl overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
-    <a href="/wardrobe{{#if search.category}}?category={{uri search.category}}{{/if}}{{#if viewOwner}}{{#if search.category}}&{{else}}?{{/if}}ownerId={{viewOwner}}{{/if}}" class="min-w-36 flex-1 px-4 py-3 text-center text-sm {{#unless search.location}}bg-slate-800 text-white{{else}}text-slate-300{{/unless}}">
+    <a href="{{allLocationsHref}}" class="min-w-36 flex-1 px-4 py-3 text-center text-sm {{#unless search.location}}bg-slate-800 text-white{{else}}text-slate-300{{/unless}}">
       All locations
     </a>
-    {{#each availableLocations}}
-    <a href="/wardrobe?location={{uri this}}{{#if ../search.category}}&category={{uri ../search.category}}{{/if}}{{#if ../viewOwner}}&ownerId={{../viewOwner}}{{/if}}" class="min-w-36 flex-1 border-l border-slate-800 px-4 py-3 text-center text-sm {{#ifEquals this ../search.location}}bg-emerald-500/20 text-emerald-200{{else}}text-slate-300{{/ifEquals}}">
-      {{this}}
+    {{#each locationTabs}}
+    <a href="{{this.href}}" class="min-w-36 flex-1 border-l border-slate-800 px-4 py-3 text-center text-sm {{#if this.active}}bg-emerald-500/20 text-emerald-200{{else}}text-slate-300{{/if}}">
+      {{this.label}}
     </a>
+    {{/each}}
+  </nav>
+  {{/if}}
+
+  {{#if categoryShortcuts.length}}
+  <nav class="mb-8 grid gap-x-10 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {{#each categoryShortcuts}}
+    <a href="{{this.href}}" class="text-emerald-400 hover:text-emerald-300">{{this.label}}</a>
     {{/each}}
   </nav>
   {{/if}}

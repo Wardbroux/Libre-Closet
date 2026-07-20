@@ -30,6 +30,13 @@ import { SharePermission } from '../dal/entity/wardrobe-share.entity';
 import type { SearchGarmentDto } from './dto/search-garment.dto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
+type CategoryOption = {
+  label: string;
+  value: string;
+  href: string;
+  hasChildren: boolean;
+};
+
 @UseGuards(ConditionalAuthGuard)
 @Controller('wardrobe')
 export class WardrobeController {
@@ -90,25 +97,45 @@ export class WardrobeController {
       value,
       label: this.garmentService.resolveCategoryLabel(value, i18n),
     }));
+    const categoryPanel = this.categoryPanel(
+      filters.categories,
+      query,
+      viewOwner,
+    );
     return {
       garments,
       availableCategories,
       categoryGroups: this.categoryGroups(filters.categories),
+      categoryPanel,
+      categoryShortcuts: categoryPanel.options,
+      filterChips: this.filterChips(query, viewOwner),
       activeCategory: query.category || 'All',
       categoryTabs: TOP_LEVEL_CATEGORIES.map((category) => ({
         label: category,
         active: (query.category || 'All') === category,
-        href:
-          category === 'All'
-            ? `/wardrobe${viewOwner ? `?ownerId=${viewOwner}` : ''}`
-            : `/wardrobe?category=${encodeURIComponent(category)}${
-                viewOwner ? `&ownerId=${viewOwner}` : ''
-              }`,
+        href: this.wardrobeUrl(
+          query,
+          {
+            category: category === 'All' ? undefined : category,
+          },
+          viewOwner,
+        ),
       })),
       colors: Object.values(GarmentColor),
       sizeGroups: SIZE_GROUPS,
+      dashboardSizeGroups: this.sizeFilterGroups(query, viewOwner),
       availableSizes: filters.sizes,
       availableLocations: filters.locations,
+      allLocationsHref: this.wardrobeUrl(
+        query,
+        { location: undefined },
+        viewOwner,
+      ),
+      locationTabs: filters.locations.map((location) => ({
+        label: location,
+        active: location === query.location,
+        href: this.wardrobeUrl(query, { location }, viewOwner),
+      })),
       availableTags: filters.tags,
       search: query,
       sharedWardrobes,
@@ -557,5 +584,244 @@ export class WardrobeController {
       groups.get(group)?.options.push(category);
     }
     return [...groups.values()];
+  }
+
+  private categoryPanel(
+    categories: string[],
+    query: SearchGarmentDto,
+    viewOwner?: number,
+  ) {
+    const active = query.category?.trim();
+    const paths = this.categoryPaths(categories);
+    const options = this.categoryOptions(paths, active, query, viewOwner);
+    return {
+      title: active || 'Category',
+      active: active ?? '',
+      breadcrumbs: this.categoryBreadcrumbs(active, query, viewOwner),
+      options,
+    };
+  }
+
+  private categoryOptions(
+    paths: string[],
+    active: string | undefined,
+    query: SearchGarmentDto,
+    viewOwner?: number,
+  ): CategoryOption[] {
+    if (!active || active === 'All') {
+      return [
+        { label: 'Clothes', value: 'Clothing' },
+        { label: 'Shoes', value: 'Shoes' },
+        { label: 'Bags', value: 'Bags' },
+        { label: 'Accessories', value: 'Accessories' },
+        { label: 'Other', value: 'Other' },
+      ].map((option) =>
+        this.categoryOption(
+          option.label,
+          option.value,
+          paths,
+          query,
+          viewOwner,
+        ),
+      );
+    }
+
+    const normalizedActive =
+      active === 'Tops & T-shirts'
+        ? 'Tops'
+        : active === 'Jeans'
+          ? 'Bottoms > Jeans'
+          : active;
+    const activeParts =
+      normalizedActive === 'Clothing'
+        ? []
+        : normalizedActive.split('>').map((part) => part.trim());
+    const nextLabels = new Set<string>();
+
+    for (const path of paths) {
+      const parts = path.split('>').map((part) => part.trim());
+      if (normalizedActive === 'Clothing') {
+        if (['Accessories', 'Bags', 'Other', 'Shoes'].includes(parts[0])) {
+          continue;
+        }
+        nextLabels.add(parts[0]);
+        continue;
+      }
+
+      const matches = activeParts.every((part, index) => parts[index] === part);
+      if (matches && parts.length > activeParts.length) {
+        nextLabels.add(parts[activeParts.length]);
+      }
+    }
+
+    if (!nextLabels.size && activeParts.length > 1) {
+      const parent = activeParts.slice(0, -1);
+      for (const path of paths) {
+        const parts = path.split('>').map((part) => part.trim());
+        const matches = parent.every((part, index) => parts[index] === part);
+        if (matches && parts.length > parent.length) {
+          nextLabels.add(parts[parent.length]);
+        }
+      }
+      return [...nextLabels]
+        .sort((a, b) => a.localeCompare(b))
+        .map((label) => {
+          const value = [...parent, label].join(' > ');
+          return this.categoryOption(label, value, paths, query, viewOwner);
+        });
+    }
+
+    return [...nextLabels]
+      .sort((a, b) => a.localeCompare(b))
+      .map((label) => {
+        const value =
+          normalizedActive === 'Clothing'
+            ? label
+            : [...activeParts, label].join(' > ');
+        return this.categoryOption(label, value, paths, query, viewOwner);
+      });
+  }
+
+  private categoryOption(
+    label: string,
+    value: string,
+    paths: string[],
+    query: SearchGarmentDto,
+    viewOwner?: number,
+  ): CategoryOption {
+    return {
+      label,
+      value,
+      href: this.wardrobeUrl(query, { category: value }, viewOwner),
+      hasChildren: this.categoryHasChildren(paths, value),
+    };
+  }
+
+  private categoryHasChildren(paths: string[], value: string): boolean {
+    if (value === 'Clothing') return true;
+    return paths.some((path) => path.startsWith(`${value} >`));
+  }
+
+  private categoryBreadcrumbs(
+    category: string | undefined,
+    query: SearchGarmentDto,
+    viewOwner?: number,
+  ) {
+    if (!category || category === 'All') return [];
+    const normalized =
+      category === 'Tops & T-shirts'
+        ? 'Tops'
+        : category === 'Jeans'
+          ? 'Bottoms > Jeans'
+          : category;
+    const crumbs = [
+      {
+        label: 'All',
+        href: this.wardrobeUrl(query, { category: undefined }, viewOwner),
+      },
+    ];
+    const firstPart = normalized.split('>')[0].trim();
+    if (
+      normalized === 'Clothing' ||
+      !['Accessories', 'Bags', 'Other', 'Shoes'].includes(firstPart)
+    ) {
+      crumbs.push({
+        label: 'Clothes',
+        href: this.wardrobeUrl(query, { category: 'Clothing' }, viewOwner),
+      });
+    }
+    if (normalized !== 'Clothing') {
+      const parts = normalized.split('>').map((part) => part.trim());
+      for (let index = 0; index < parts.length; index += 1) {
+        const value = parts.slice(0, index + 1).join(' > ');
+        crumbs.push({
+          label: parts[index],
+          href: this.wardrobeUrl(query, { category: value }, viewOwner),
+        });
+      }
+    }
+    return crumbs;
+  }
+
+  private categoryPaths(categories: string[]): string[] {
+    return [...new Set([...DEFAULT_CATEGORY_PATHS, ...categories])]
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  private filterChips(query: SearchGarmentDto, viewOwner?: number) {
+    const chips: { label: string; href: string }[] = [];
+    if (query.keyword) {
+      chips.push({
+        label: query.keyword,
+        href: this.wardrobeUrl(query, { keyword: undefined }, viewOwner),
+      });
+    }
+    if (query.category) {
+      chips.push({
+        label: query.category,
+        href: this.wardrobeUrl(query, { category: undefined }, viewOwner),
+      });
+    }
+    if (query.location) {
+      chips.push({
+        label: query.location,
+        href: this.wardrobeUrl(query, { location: undefined }, viewOwner),
+      });
+    }
+    if (query.size) {
+      chips.push({
+        label: query.size,
+        href: this.wardrobeUrl(query, { size: undefined }, viewOwner),
+      });
+    }
+    if (query.color) {
+      chips.push({
+        label: query.color,
+        href: this.wardrobeUrl(query, { color: undefined }, viewOwner),
+      });
+    }
+    if (query.tag) {
+      chips.push({
+        label: query.tag,
+        href: this.wardrobeUrl(query, { tag: undefined }, viewOwner),
+      });
+    }
+    return chips;
+  }
+
+  private sizeFilterGroups(query: SearchGarmentDto, viewOwner?: number) {
+    return SIZE_GROUPS.map((group) => ({
+      label: group.label,
+      sizes: group.sizes.map((size) => ({
+        label: size,
+        href: this.wardrobeUrl(query, { size }, viewOwner),
+        active: query.size === size,
+      })),
+    }));
+  }
+
+  private wardrobeUrl(
+    query: SearchGarmentDto,
+    overrides: Partial<SearchGarmentDto> = {},
+    viewOwner?: number,
+  ): string {
+    const merged = { ...query, ...overrides };
+    const params = new URLSearchParams();
+    for (const key of [
+      'keyword',
+      'category',
+      'location',
+      'size',
+      'color',
+      'tag',
+      'archived',
+    ] as const) {
+      const value = merged[key];
+      if (value) params.set(key, String(value));
+    }
+    if (viewOwner) params.set('ownerId', String(viewOwner));
+    const queryString = params.toString();
+    return queryString ? `/wardrobe?${queryString}` : '/wardrobe';
   }
 }
