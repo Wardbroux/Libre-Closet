@@ -5,6 +5,8 @@ export interface CreateGarmentDto {
   brand?: string;
   color?: string;
   size?: string;
+  location?: string;
+  tags?: string;
   notes?: string;
   washingDetails?: string;
   dateAquired?: string;
