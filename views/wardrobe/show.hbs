@@ -1,346 +1,265 @@
 {{>navbar}}
 
-<main class="p-4 pt-20 pb-24 max-w-lg mx-auto">
-  <div class="flex items-center gap-3 mb-6">
-    <a
-      href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
-      class="btn btn-ghost btn-sm btn-circle"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="2"
-        stroke="currentColor"
-        class="size-4"
+<main class="min-h-screen bg-slate-950 px-4 pt-20 pb-28 text-slate-100">
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-7">
+    <div class="flex items-center justify-between gap-3">
+      <a
+        href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+        class="btn btn-ghost btn-sm gap-2 text-slate-100"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-        />
-      </svg>
-    </a>
-    <h1 class="text-2xl font-bold flex-1">{{garment.name}}</h1>
-  </div>
-
-  {{#if garment.photo}}
-  <figure
-    class="relative rounded-box overflow-hidden mb-6 bg-base-200 aspect-square w-full max-w-sm mx-auto"
-  >
-    <img
-      src="/file/nobg/{{garment.photo.fileName}}"
-      alt="{{garment.name}}"
-      class="object-cover w-full h-full"
-    />
-    {{!-- Edit mask icon button--}}
-    <button
-      id="editMaskBtn"
-      type="button"
-      class="btn btn-circle btn-sm absolute top-2 right-2 btn-neutral opacity-80 hover:opacity-100"
-      title="Edit mask"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="1.5"
-        stroke="currentColor"
-        class="size-4"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-        />
-      </svg>
-    </button>
-  </figure>
-  {{else}}
-  <div
-    class="rounded-box bg-base-200 aspect-square w-full max-w-sm mx-auto flex items-center justify-center text-base-content/30 mb-6"
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke-width="1"
-      stroke="currentColor"
-      class="size-20"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.251 2.251 0 0 1 2.012 1.244l.256.512a2.251 2.251 0 0 0 2.013 1.244h3.218a2.251 2.251 0 0 0 2.013-1.244l.256-.512a2.251 2.251 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3"
-      />
-    </svg>
-  </div>
-  {{/if}} {{#if canEdit}} {{!-- Photo upload --}}
-  <form
-    hx-post="/wardrobe/{{garment.id}}/photo{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
-    hx-encoding="multipart/form-data"
-    hx-indicator="#loading"
-    hx-target="main"
-    hx-select="main"
-    hx-swap="outerHTML"
-    class="flex flex-col gap-2 mb-6"
-  >
-    <input
-      type="file"
-      id="nobgPhotoInput"
-      name="nobgPhoto"
-      class="hidden"
-      accept="image/webp"
-    />
-    <div class="flex gap-2 items-center">
-      <input
-        type="file"
-        id="photoInput"
-        name="photo"
-        class="file-input file-input-sm flex-1"
-        accept="image/jpeg,image/png,image/gif,image/webp"
-      />
-      <button id="photoBtn" class="btn btn-neutral btn-sm" disabled>
-        {{#if garment.photo}}{{t 'lang.UPDATE_PHOTO'}}{{else}}{{t
-        'lang.ADD_PHOTO'}}{{/if}}
-      </button>
-      <span
-        id="loading"
-        class="htmx-indicator loading loading-ring loading-sm"
-      ></span>
-    </div>
-    <label class="flex items-center gap-2 cursor-pointer select-none">
-      <input
-        type="checkbox"
-        id="bgRemovalToggle"
-        class="toggle toggle-sm"
-        checked
-      />
-      <span class="text-sm">{{t 'lang.BG_REMOVAL_TOGGLE'}}</span>
-    </label>
-    <div
-      id="bgStatus"
-      class="hidden flex flex-col gap-1 text-sm text-base-content/60"
-      data-text-default="{{t 'lang.REMOVING_BACKGROUND'}}"
-      data-text-downloading="{{t 'lang.BG_STAGE_DOWNLOADING'}}"
-      data-text-decoding="{{t 'lang.BG_STAGE_DECODING'}}"
-      data-text-inference="{{t 'lang.BG_STAGE_INFERENCE'}}"
-      data-text-mask="{{t 'lang.BG_STAGE_MASK'}}"
-      data-text-encoding="{{t 'lang.BG_STAGE_ENCODING'}}"
-      data-text-hint-typical="{{t 'lang.BG_HINT_TYPICAL_DURATION'}}"
-      data-text-hint-slow="{{t 'lang.BG_HINT_STILL_WORKING'}}"
-    >
-      <div class="flex items-center gap-2">
-        <span class="loading loading-spinner loading-xs"></span>
-        <span id="bgStatusText">{{t 'lang.REMOVING_BACKGROUND'}}</span>
-      </div>
-      <span id="bgStatusHint" class="text-xs opacity-80"
-        >{{t 'lang.BG_HINT_TYPICAL_DURATION'}}</span
-      >
-    </div>
-  </form>
-  <script type="module">
-    import { wireUpPhotoInput, wireUpEditMaskBtn, isBgRemovalEnabled } from '/js/background-removal.js';
-
-    const toggle = document.getElementById('bgRemovalToggle');
-    const stored = localStorage.getItem('bgRemovalEnabled');
-    toggle.checked = stored === null ? true : stored !== 'false';
-    localStorage.setItem('bgRemovalEnabled', toggle.checked);
-
-    toggle.addEventListener('change', () => {
-      localStorage.setItem('bgRemovalEnabled', toggle.checked);
-      const editBtn = document.getElementById('editMaskBtn');
-      if (editBtn) editBtn.style.display = toggle.checked ? '' : 'none';
-
-      if (toggle.checked) {
-        const photoInput = document.getElementById('photoInput');
-        if (photoInput?.files?.length) {
-          photoInput.dispatchEvent(new Event('change'));
-        }
-      }
-    });
-
-    wireUpPhotoInput();
-    {{#if garment.photo}}
-    wireUpEditMaskBtn('{{garment.photo.fileName}}', {{garment.id}});
-    if (!isBgRemovalEnabled()) {
-      document.getElementById('editMaskBtn')?.style.setProperty('display', 'none');
-    }
-    {{/if}}
-  </script>
-  {{/if}} {{!-- Metadata --}}
-  <div class="card bg-base-100 shadow-sm mb-4">
-    <div class="card-body gap-3">
-      <div class="flex justify-between">
-        <span class="text-base-content/60 text-sm">{{t 'lang.CATEGORY'}}</span>
-        <span class="capitalize font-medium">{{categoryLabel}}</span>
-      </div>
-      {{#if garment.brand}}
-      <div class="flex justify-between">
-        <span class="text-base-content/60 text-sm">{{t 'lang.BRAND'}}</span>
-        <span class="font-medium">{{garment.brand}}</span>
-      </div>
-      {{/if}} {{#if garment.size}}
-      <div class="flex justify-between">
-        <span class="text-base-content/60 text-sm">{{t 'lang.SIZE'}}</span>
-        <span class="font-medium">{{garment.size}}</span>
-      </div>
-      {{/if}}       {{#if garment.color}}
-      <div class="flex justify-between">
-        <span class="text-base-content/60 text-sm">{{t 'lang.COLOR'}}</span>
-        <span class="capitalize font-medium"
-          >{{formatColors garment.color}}</span
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          class="size-5"
         >
-      </div>
-      {{/if}} {{#if garment.washingDetails}}
-      <div class="flex flex-col gap-1">
-        <span class="text-base-content/60 text-sm">{{t 'lang.WASHING_DETAILS'}}</span>
-        <p class="text-sm">{{garment.washingDetails}}</p>
-      {{/if}} {{#if garment.dateAquired}}
-      <div class="flex justify-between">
-        <span class="text-base-content/60 text-sm">{{t 'lang.DATE_AQUIRED'}}</span>
-        <span class="font-medium">{{formatDate garment.dateAquired}}</span>
-      </div>
-      {{/if}} {{#if garment.notes}}
-      <div class="flex flex-col gap-1">
-        <span class="text-base-content/60 text-sm">{{t 'lang.NOTES'}}</span>
-        <p class="text-sm">{{garment.notes}}</p>
-      </div>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+          />
+        </svg>
+        Back to all items
+      </a>
+      {{#if canEdit}}
+      <a
+        href="/wardrobe/{{garment.id}}/edit{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+        class="btn btn-outline btn-sm border-slate-600 bg-slate-900/70 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-4"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"
+          />
+        </svg>
+        Edit item
+      </a>
       {{/if}}
     </div>
-  </div>
-  {{!-- Edit --}} {{#if canEdit}}
-  <div class="flex gap-2 mb-6">
-    <a
-      href="/wardrobe/{{garment.id}}/edit{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
-      class="btn btn-outline btn-sm flex-1"
-    >
-      {{t 'lang.EDIT'}}
-    </a>
-  </div>
-  {{/if}}
 
-  {{!-- Clone --}}
-  {{#if canClone}}
-  <div class="flex gap-2 mb-6">
-    <a
-      href="/wardrobe/{{garment.id}}/clone{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
-      class="btn btn-outline btn-sm flex-1"
-    >
-      {{t 'lang.CLONE_GARMENT'}}
-    </a>
-  </div>
-  {{/if}}
-
-  {{!-- Share --}}
-  {{#if canEdit}}
-  <div class="flex gap-2 mb-6">
-    <button
-      class="btn btn-outline btn-sm flex-1"
-      onclick="navigator.clipboard.writeText('{{siteUrl}}/share?shareableId={{garment.shareableId}}&type=garment'); alert('{{t 'lang.COPIED'}}')"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke-width="1.5"
-        stroke="currentColor"
-        class="size-4"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.935-2.185 2.25 2.25 0 0 0-3.935 2.185Z"
-        />
-      </svg>
-      {{t 'lang.SHARE'}}
-    </button>
-  </div>
-  {{/if}}
-
-  {{!-- Archive --}}
-  {{#if canDelete}}
-  <button
-    class="btn btn-outline btn-sm w-full mb-6"
-    hx-post="/wardrobe/{{garment.id}}/archive"
-    hx-confirm="{{#if garment.archived}}{{t 'lang.CONFIRM_UNARCHIVE'}}{{else}}{{t 'lang.CONFIRM_ARCHIVE'}}{{/if}}"
-    hx-indicator="#loading"
-  >
-    {{#if garment.archived}}{{t 'lang.UNARCHIVE'}}{{else}}{{t 'lang.ARCHIVE'}}{{/if}}
-  </button>
-  {{/if}}
-
-  {{!-- Delete --}}
-  {{#if canDelete}}
-  <button
-    class="btn btn-error btn-outline btn-sm w-full"
-    hx-delete="/wardrobe/{{garment.id}}"
-    hx-confirm="{{t 'lang.CONFIRM_DELETE'}}"
-    hx-indicator="#loading"
-  >
-    {{t 'lang.DELETE'}}
-  </button>
-  {{/if}} {{!-- Mask editor dialog --}}
-  <dialog id="maskEditorDialog" class="modal">
-    <div class="modal-box w-full max-w-lg p-4 flex flex-col gap-4">
-      <h3 class="font-bold text-lg">{{t 'lang.MASK_EDITOR_TITLE'}}</h3>
-      {{!-- Brush controls --}}
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="join">
-          <button id="maskBrushErase" class="btn btn-sm join-item">
-            {{t 'lang.MASK_BRUSH_ERASE'}}
-          </button>
-          <button id="maskBrushRestore" class="btn btn-sm join-item">
-            {{t 'lang.MASK_BRUSH_RESTORE'}}
-          </button>
-        </div>
-        <div class="flex items-center gap-2 flex-1 min-w-32">
-          <span class="text-xs text-base-content/60 shrink-0"
-            >{{t 'lang.MASK_BRUSH_SIZE'}}</span
-          >
-          <input
-            id="maskBrushSize"
-            type="range"
-            min="4"
-            max="80"
-            value="20"
-            class="range range-xs flex-1"
+    <section class="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(380px,0.85fr)]">
+      <div class="flex flex-col gap-4">
+        <figure
+          class="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30"
+        >
+          {{#if garment.photo}}
+          <img
+            src="/file/nobg/{{garment.photo.fileName}}"
+            alt="{{garment.name}}"
+            class="h-full w-full object-contain p-5"
           />
+          {{else}}
+          <div class="flex h-full w-full items-center justify-center text-slate-500">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1"
+              stroke="currentColor"
+              class="size-20"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M12 3v8.25"
+              />
+            </svg>
+          </div>
+          {{/if}}
+        </figure>
+
+        <div class="grid grid-cols-5 gap-3">
+          <div class="aspect-square rounded-lg border border-emerald-400 bg-slate-900 p-2">
+            {{#if garment.photo}}
+            <img
+              src="/file/nobg/{{garment.photo.fileName}}"
+              alt="{{garment.name}}"
+              class="h-full w-full object-contain"
+            />
+            {{/if}}
+          </div>
+          <div class="aspect-square rounded-lg border border-dashed border-slate-600 bg-slate-900/60"></div>
+          <div class="aspect-square rounded-lg border border-dashed border-slate-600 bg-slate-900/60"></div>
+          <div class="aspect-square rounded-lg border border-dashed border-slate-600 bg-slate-900/60"></div>
+          {{#if canEdit}}
+          <a
+            href="/wardrobe/{{garment.id}}/edit{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+            class="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300"
+          >
+            <span class="text-3xl leading-none">+</span>
+            Add photo
+          </a>
+          {{/if}}
         </div>
       </div>
-      <div class="overflow-auto rounded-box border border-base-300 bg-base-200">
-        <canvas
-          id="maskEditorCanvas"
-          class="block max-w-full mx-auto cursor-crosshair"
-          style="
-            background-image:
-              linear-gradient(45deg, #cccccc 25%, transparent 25%),
-              linear-gradient(-45deg, #cccccc 25%, transparent 25%),
-              linear-gradient(45deg, transparent 75%, #cccccc 75%),
-              linear-gradient(-45deg, transparent 75%, #cccccc 75%);
-            background-size: 16px 16px;
-            background-position:
-              0 0,
-              0 8px,
-              8px -8px,
-              -8px 0px;
-            background-color: #ffffff;
-          "
-        ></canvas>
+
+      <div class="flex flex-col gap-4">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
+              {{categoryLabel}}
+            </div>
+            <h1 class="text-3xl font-bold tracking-normal text-white">
+              {{#if garment.name}}{{garment.name}}{{else}}Untitled item{{/if}}
+            </h1>
+          </div>
+        </div>
+
+        <div class="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/50">
+          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-center gap-3 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21s7.5-6.04 7.5-12A7.5 7.5 0 0 0 4.5 9c0 5.96 7.5 12 7.5 12Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+              Location
+            </div>
+            <div class="justify-self-end rounded-lg border border-emerald-500/25 bg-emerald-500/15 px-4 py-2 font-medium text-emerald-200">
+              {{#if garment.location}}{{garment.location}}{{else}}Unassigned{{/if}}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-center gap-3 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5m-15 4.5h13.5m-12 4.5h10.5" />
+              </svg>
+              Category
+            </div>
+            <div class="flex flex-wrap items-center justify-end gap-2 text-emerald-200">
+              {{#each (splitCategoryPath garment.category)}}
+              <span>{{this}}</span>{{#unless @last}}<span class="text-slate-500">></span>{{/unless}}
+              {{/each}}
+            </div>
+          </div>
+
+          {{#if garment.brand}}
+          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-center gap-3 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.169.659 1.591l8.591 8.591a2.25 2.25 0 0 0 3.182 0l4.318-4.318a2.25 2.25 0 0 0 0-3.182L11.159 3.659A2.25 2.25 0 0 0 9.568 3Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6Z" />
+              </svg>
+              Brand
+            </div>
+            <div class="justify-self-end font-medium text-white">{{garment.brand}}</div>
+          </div>
+          {{/if}}
+
+          {{#if garment.color}}
+          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-center gap-3 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 0 0 4.242 0l.708-.708a3 3 0 0 0-4.243-4.243l-.707.708a3 3 0 0 0 0 4.243Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.47 7.878a3 3 0 0 0-4.242 0l-.708.708a3 3 0 0 0 4.243 4.243l.707-.708a3 3 0 0 0 0-4.243Z" />
+              </svg>
+              Color
+            </div>
+            <div class="flex flex-wrap justify-end gap-2">
+              {{#each (splitCsv garment.color)}}
+              <span class="rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white">{{this}}</span>
+              {{/each}}
+            </div>
+          </div>
+          {{/if}}
+
+          {{#if garment.size}}
+          <div class="grid grid-cols-[150px_1fr] items-center gap-4 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-center gap-3 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 8.25h16.5M5.25 8.25v7.5A2.25 2.25 0 0 0 7.5 18h9a2.25 2.25 0 0 0 2.25-2.25v-7.5" />
+              </svg>
+              Size
+            </div>
+            <div class="justify-self-end font-medium text-white">{{garment.size}}</div>
+          </div>
+          {{/if}}
+
+          <div class="grid gap-3 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-center gap-3 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.169.659 1.591l8.591 8.591a2.25 2.25 0 0 0 3.182 0l4.318-4.318a2.25 2.25 0 0 0 0-3.182L11.159 3.659A2.25 2.25 0 0 0 9.568 3Z" />
+              </svg>
+              Tags
+            </div>
+            <div class="flex flex-wrap justify-start gap-2 sm:justify-end">
+              {{#each (splitCsv garment.tags)}}
+              <span class="rounded-md border px-3 py-1 text-sm" style="{{tagStyle @index}}">{{this}}</span>
+              {{/each}}
+              {{#unless garment.tags}}
+              <span class="text-sm text-slate-500">No tags yet</span>
+              {{/unless}}
+            </div>
+          </div>
+
+          {{#if garment.notes}}
+          <div class="grid gap-3 px-1 py-4 sm:grid-cols-[180px_1fr]">
+            <div class="flex items-start gap-3 pt-2 text-slate-300">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-7.5A2.25 2.25 0 0 0 17.25 4.5H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5A2.25 2.25 0 0 0 6.75 19.5h7.5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="m15 19.5 4.5-4.5" />
+              </svg>
+              Notes
+            </div>
+            <p class="rounded-lg border border-slate-800 bg-slate-900/70 p-4 text-slate-200">
+              {{garment.notes}}
+            </p>
+          </div>
+          {{/if}}
+        </div>
       </div>
-      <div class="modal-action mt-0">
-        <button id="maskEditorSkip" class="btn btn-ghost btn-sm">
-          {{t 'lang.MASK_EDITOR_SKIP'}}
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+      <h2 class="mb-4 text-lg font-semibold text-white">Quick actions</h2>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {{#if canClone}}
+        <a
+          href="/wardrobe/{{garment.id}}/clone{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
+          class="btn btn-outline border-slate-700 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15"
+        >
+          Clone item
+        </a>
+        {{/if}}
+        {{#if canEdit}}
+        <button
+          class="btn btn-outline border-slate-700 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15"
+          onclick="navigator.clipboard.writeText('{{siteUrl}}/share?shareableId={{garment.shareableId}}&type=garment'); alert('{{t 'lang.COPIED'}}')"
+        >
+          Share item
         </button>
-        <button id="maskEditorAccept" class="btn btn-primary btn-sm">
-          {{t 'lang.MASK_EDITOR_ACCEPT'}}
+        {{/if}}
+        {{#if canDelete}}
+        <button
+          class="btn btn-outline border-slate-700 text-slate-100 hover:border-amber-300 hover:bg-amber-500/15"
+          hx-post="/wardrobe/{{garment.id}}/archive"
+          hx-confirm="{{#if garment.archived}}{{t 'lang.CONFIRM_UNARCHIVE'}}{{else}}{{t 'lang.CONFIRM_ARCHIVE'}}{{/if}}"
+          hx-indicator="#loading"
+        >
+          {{#if garment.archived}}Unarchive item{{else}}Archive item{{/if}}
         </button>
+        <button
+          class="btn btn-outline border-red-500/40 text-red-300 hover:border-red-300 hover:bg-red-500/15"
+          hx-delete="/wardrobe/{{garment.id}}"
+          hx-confirm="{{t 'lang.CONFIRM_DELETE'}}"
+          hx-indicator="#loading"
+        >
+          Delete item
+        </button>
+        {{/if}}
       </div>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-      <button>close</button>
-    </form>
-  </dialog>
+    </section>
+  </div>
 </main>
 
 {{>dock}}
