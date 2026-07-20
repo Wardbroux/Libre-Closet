@@ -40,6 +40,16 @@
       <div class="card-body p-3">
         <h2 class="card-title text-sm">{{this.name}}</h2>
         <p class="text-xs text-base-content/60 capitalize">{{this.category}}</p>
+        {{#if this.location}}
+        <p class="text-xs text-emerald-400">{{this.location}}</p>
+        {{/if}}
+        {{#if this.tags}}
+        <div class="flex flex-wrap gap-1">
+          {{#each (splitCsv this.tags)}}
+          <span class="badge badge-outline badge-xs">{{this}}</span>
+          {{/each}}
+        </div>
+        {{/if}}
       </div>
     </a>
     {{/each}}
@@ -88,6 +98,18 @@
       {{search.size}} &times;
     </a>
     {{/if}}
+    {{#if search.location}}
+    <a href="/wardrobe?keyword={{search.keyword}}&category={{search.category}}&color={{search.color}}&size={{search.size}}&tag={{search.tag}}{{#if viewOwner}}&ownerId={{viewOwner}}{{/if}}"
+      class="badge badge-success badge-sm gap-1 cursor-pointer no-underline">
+      {{search.location}} &times;
+    </a>
+    {{/if}}
+    {{#if search.tag}}
+    <a href="/wardrobe?keyword={{search.keyword}}&category={{search.category}}&color={{search.color}}&size={{search.size}}&location={{search.location}}{{#if viewOwner}}&ownerId={{viewOwner}}{{/if}}"
+      class="badge badge-info badge-sm gap-1 cursor-pointer no-underline">
+      {{search.tag}} &times;
+    </a>
+    {{/if}}
     {{#if search.archived}}
     <a href="/wardrobe?keyword={{search.keyword}}&category={{search.category}}&color={{search.color}}&size={{search.size}}{{#if viewOwner}}&ownerId={{viewOwner}}{{/if}}"
       class="badge badge-warning badge-sm gap-1 cursor-pointer no-underline">
@@ -101,6 +123,8 @@
     <input type="hidden" name="category" id="active-category" value="{{search.category}}">
     <input type="hidden" name="color" id="active-color" value="{{search.color}}">
     <input type="hidden" name="size" id="active-size" value="{{search.size}}">
+    <input type="hidden" name="location" id="active-location" value="{{search.location}}">
+    <input type="hidden" name="tag" id="active-tag" value="{{search.tag}}">
     <input type="hidden" name="archived" id="active-archived" value="{{search.archived}}">
     {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
     <input
@@ -163,6 +187,38 @@
     </div>
     {{/if}}
 
+    {{!-- Location --}}
+    {{#if availableLocations.length}}
+    <div class="mb-5">
+      <h4 class="font-medium text-sm text-base-content/60 uppercase tracking-wide mb-2">Location</h4>
+      <div class="flex flex-wrap gap-2">
+        {{#each availableLocations}}
+        <label class="cursor-pointer">
+          <input type="radio" name="modal-location" value="{{this}}" class="hidden peer"
+            {{#ifEquals this ../search.location}}checked{{/ifEquals}}>
+          <span class="badge badge-outline peer-checked:badge-success select-none">{{this}}</span>
+        </label>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- Tags --}}
+    {{#if availableTags.length}}
+    <div class="mb-5">
+      <h4 class="font-medium text-sm text-base-content/60 uppercase tracking-wide mb-2">Tags</h4>
+      <div class="flex flex-wrap gap-2">
+        {{#each availableTags}}
+        <label class="cursor-pointer">
+          <input type="radio" name="modal-tag" value="{{this}}" class="hidden peer"
+            {{#ifEquals this ../search.tag}}checked{{/ifEquals}}>
+          <span class="badge badge-outline peer-checked:badge-info select-none">{{this}}</span>
+        </label>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
     {{!-- Archived --}}
     <div class="mb-5">
       <h4 class="font-medium text-sm text-base-content/60 uppercase tracking-wide mb-2">{{t 'lang.ARCHIVED'}}</h4>
@@ -186,12 +242,20 @@
           for el in <input[name='modal-size']/>
             set el.checked to false
           end
+          for el in <input[name='modal-location']/>
+            set el.checked to false
+          end
+          for el in <input[name='modal-tag']/>
+            set el.checked to false
+          end
           for el in <input[name='modal-archived']/>
             set el.checked to false
           end
           set #active-category.value to ''
           set #active-color.value to ''
           set #active-size.value to ''
+          set #active-location.value to ''
+          set #active-tag.value to ''
           set #active-archived.value to ''
           call #filter-modal.close()
           call #search-form.submit()">
@@ -209,12 +273,20 @@
           set size to ''
           get the first <input[name='modal-size']:checked/>
           if it then set size to it.value end
+          set location to ''
+          get the first <input[name='modal-location']:checked/>
+          if it then set location to it.value end
+          set tag to ''
+          get the first <input[name='modal-tag']:checked/>
+          if it then set tag to it.value end
           set archived to ''
           get the first <input[name='modal-archived']:checked/>
           if it then set archived to 'true' end
           set #active-category.value to category
           set #active-color.value to color
           set #active-size.value to size
+          set #active-location.value to location
+          set #active-tag.value to tag
           set #active-archived.value to archived
           call #filter-modal.close()
           call #search-form.submit()">
