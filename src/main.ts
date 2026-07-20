@@ -176,6 +176,30 @@ async function bootstrap() {
       .map((s) => s.trim())
       .join(', ');
   });
+  hbs.registerHelper('splitCsv', function (value: string | undefined) {
+    if (!value) return [];
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  });
+  hbs.registerHelper('splitCategoryPath', function (value: string | undefined) {
+    if (!value) return [];
+    return value
+      .split('>')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  });
+  hbs.registerHelper('tagStyle', function (index: number) {
+    const styles = [
+      'border-color: rgba(52, 211, 153, .4); background: rgba(16, 185, 129, .15); color: rgb(167, 243, 208);',
+      'border-color: rgba(251, 191, 36, .4); background: rgba(245, 158, 11, .15); color: rgb(253, 230, 138);',
+      'border-color: rgba(167, 139, 250, .4); background: rgba(139, 92, 246, .15); color: rgb(221, 214, 254);',
+      'border-color: rgba(56, 189, 248, .4); background: rgba(14, 165, 233, .15); color: rgb(186, 230, 253);',
+      'border-color: rgba(251, 113, 133, .4); background: rgba(244, 63, 94, .15); color: rgb(254, 205, 211);',
+    ];
+    return styles[index % styles.length];
+  });
   hbs.registerHelper(
     'ifEquals',
     function (arg1: unknown, arg2: unknown, options: HelperOptions) {
