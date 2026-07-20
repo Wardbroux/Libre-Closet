@@ -91,6 +91,8 @@ export class WardrobeController {
       availableCategories,
       colors: Object.values(GarmentColor),
       availableSizes: filters.sizes,
+      availableLocations: filters.locations,
+      availableTags: filters.tags,
       search: query,
       sharedWardrobes,
       viewOwner: viewOwner ?? null,
@@ -139,6 +141,8 @@ export class WardrobeController {
       brand?: string;
       color?: string | string[];
       size?: string;
+      location?: string;
+      tags?: string;
       notes?: string;
       washingDetails?: string;
       dateAquired?: string;
@@ -170,6 +174,8 @@ export class WardrobeController {
         brand: body.brand,
         color: rawColors.join(','),
         size: body.size,
+        location: body.location,
+        tags: body.tags,
         notes: body.notes,
         washingDetails: body.washingDetails,
         dateAquired: body.dateAquired,
@@ -312,6 +318,8 @@ export class WardrobeController {
       brand?: string;
       color?: GarmentColor;
       size?: string;
+      location?: string;
+      tags?: string;
       notes?: string;
     },
     @Req() req: FastifyRequest,
@@ -330,6 +338,8 @@ export class WardrobeController {
         brand: body.brand,
         color: Array.isArray(body.color) ? body.color.join(',') : body.color,
         size: body.size,
+        location: body.location,
+        tags: body.tags,
         notes: body.notes,
       },
       userId,
@@ -347,6 +357,8 @@ export class WardrobeController {
       brand?: string;
       color?: GarmentColor;
       size?: string;
+      location?: string;
+      tags?: string;
       notes?: string;
       washingDetails?: string;
       dateAquired?: string;
@@ -371,6 +383,8 @@ export class WardrobeController {
         brand: body.brand,
         color: Array.isArray(body.color) ? body.color.join(',') : body.color,
         size: body.size,
+        location: body.location,
+        tags: body.tags,
         notes: body.notes,
         washingDetails: body.washingDetails,
         dateAquired: body.dateAquired,
