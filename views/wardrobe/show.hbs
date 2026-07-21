@@ -236,7 +236,6 @@
         <div>
           <h2 class="text-xl font-semibold text-white">Photo</h2>
           <p id="photoEditorStatus" class="mt-1 text-sm text-slate-400">Upload or drag a photo, then frame it.</p>
-          <button type="button" id="photoEditorDelete" class="mt-3 hidden w-full rounded-lg border border-red-500/40 px-4 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
         </div>
         <label class="grid gap-2 text-sm text-slate-300">
           Zoom
@@ -251,6 +250,7 @@
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
         <div class="mt-auto flex justify-end gap-3">
+          <button type="button" id="photoEditorDelete" class="mr-auto hidden rounded-lg border border-red-500/40 px-4 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
           <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
           <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
           <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Save photo</button>
@@ -605,6 +605,21 @@
       setPhotoStatus('Frame the photo, then save it.');
       drawPhotoPreview();
     };
+    const resetPhotoEditor = () => {
+      photoImage = null;
+      if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+      photoObjectUrl = '';
+      if (photoFileInput) photoFileInput.value = '';
+      if (uploadInput) uploadInput.value = '';
+      photoDropHint?.classList.remove('hidden');
+      photoCanvas?.classList.add('hidden');
+      if (photoCanvas) {
+        const ctx = photoCanvas.getContext('2d');
+        ctx?.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+      }
+      if (photoSave) photoSave.disabled = true;
+      resetPhotoControls();
+    };
     const selectGalleryPhoto = (index) => {
       if (!galleryPhotos.length) return;
       activePhotoIndex = (index + galleryPhotos.length) % galleryPhotos.length;
@@ -623,10 +638,11 @@
       return orderedIds;
     };
     const openPhotoModal = async ({ existing = false, photoName = '', photoId = '' } = {}) => {
+      resetPhotoEditor();
       if (photoIdInput) photoIdInput.value = photoId;
       if (photoDelete) {
         photoDelete.classList.toggle('hidden', !photoId);
-        photoDelete.style.display = photoId ? 'block' : 'none';
+        photoDelete.style.display = photoId ? 'inline-flex' : 'none';
       }
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
@@ -677,6 +693,7 @@
       await processing;
       setPhotoStatus('Uploading photo...');
       closePhotoModal();
+      sessionStorage.setItem('libreClosetReturnToEdit', 'true');
       uploadForm.requestSubmit();
     };
 
@@ -742,6 +759,7 @@
     });
     photoDelete?.addEventListener('click', async () => {
       if (!activePhotoId || !confirm('Remove this photo?')) return;
+      sessionStorage.setItem('libreClosetReturnToEdit', 'true');
       await fetch(`/wardrobe/{{garment.id}}/photos/${activePhotoId}/delete{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}`, { method: 'POST' });
       window.location.reload();
     });
@@ -799,5 +817,9 @@
       drawPhotoPreview();
     }, { passive: false });
     wireUpPhotoInput();
+    if (sessionStorage.getItem('libreClosetReturnToEdit') === 'true') {
+      sessionStorage.removeItem('libreClosetReturnToEdit');
+      setEditing(true);
+    }
   </script>
 </main>
