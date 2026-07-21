@@ -349,6 +349,16 @@ body {
   }
 }
 
+.dashboard-shortcuts {
+  column-count: 3;
+  column-gap: 4rem;
+}
+
+.dashboard-shortcuts a {
+  break-inside: avoid;
+  margin-bottom: 0.5rem;
+}
+
 @media (max-width: 640px) {
   body {
     background: #020617;
@@ -525,13 +535,14 @@ body {
 
   .dashboard-shortcuts {
     order: 6;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem 1rem;
+    column-count: 2;
+    column-gap: 1rem;
     margin-bottom: 0.85rem;
   }
 
   .dashboard-shortcuts a {
     font-size: 0.75rem;
+    margin-bottom: 0.45rem;
   }
 
   .dashboard-grid {
@@ -555,6 +566,12 @@ body {
   .wardrobe-dashboard > .mb-5.flex.flex-wrap.items-center.gap-3 a {
     padding: 0.35rem 0.55rem;
     font-size: 0.72rem;
+  }
+
+  .dashboard-empty-state {
+    order: 8;
+    min-height: 12rem;
+    padding-block: 1rem;
   }
 
   .wardrobe-card {

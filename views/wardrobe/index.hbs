@@ -185,9 +185,9 @@
   {{/if}}
 
   {{#if categoryShortcuts.length}}
-  <nav class="dashboard-shortcuts mb-8 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+  <nav class="dashboard-shortcuts mb-8 max-w-5xl text-sm">
     {{#each categoryShortcuts}}
-    <a href="{{this.href}}" class="text-emerald-400 hover:text-emerald-300">{{this.label}}</a>
+    <a href="{{this.href}}" class="block text-emerald-400 hover:text-emerald-300">{{this.label}}</a>
     {{/each}}
   </nav>
   {{/if}}
@@ -244,7 +244,7 @@
     {{/each}}
   </section>
   {{else}}
-  <section class="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center text-slate-500">
+  <section class="dashboard-empty-state flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center text-slate-500">
     <p>{{t 'lang.NO_GARMENTS'}}</p>
     {{#if canEdit}}
     <a href="/wardrobe/new{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="btn bg-emerald-600 text-white hover:bg-emerald-500">{{t 'lang.ADD_FIRST_GARMENT'}}</a>

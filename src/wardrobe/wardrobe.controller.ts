@@ -817,7 +817,7 @@ export class WardrobeController {
   ): CategoryOption[] {
     if (!active || active === 'All') {
       return [
-        { label: 'Clothes', value: 'Clothing' },
+        { label: 'Clothing', value: 'Clothing' },
         { label: 'Shoes', value: 'Shoes' },
         { label: 'Bags', value: 'Bags' },
         { label: 'Accessories', value: 'Accessories' },
@@ -904,7 +904,7 @@ export class WardrobeController {
       !['Accessories', 'Bags', 'Other', 'Shoes'].includes(firstPart)
     ) {
       crumbs.push({
-        label: 'Clothes',
+        label: 'Clothing',
         href: this.wardrobeUrl(query, { category: 'Clothing' }, viewOwner),
       });
     }
