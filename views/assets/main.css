@@ -348,3 +348,298 @@ body {
     box-shadow: 0 1px color-mix(in oklab, var(--input-color) calc(var(--depth) * 10%), #0000);
   }
 }
+
+@media (max-width: 640px) {
+  body {
+    background: #020617;
+    overscroll-behavior-y: contain;
+  }
+
+  .wardrobe-dashboard,
+  .wardrobe-detail {
+    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .dashboard-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin-inline: -0.75rem;
+    padding: 0.75rem 0.75rem 0.875rem;
+    background: color-mix(in oklab, #020617 92%, transparent);
+    border-bottom-color: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(14px);
+  }
+
+  .dashboard-header > .flex:first-child svg {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+
+  .dashboard-header .text-2xl {
+    font-size: 1.15rem;
+    line-height: 1.2;
+  }
+
+  .dashboard-header .text-sm {
+    font-size: 0.72rem;
+  }
+
+  .dashboard-search {
+    order: 3;
+    max-width: none;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .dashboard-search input {
+    font-size: 16px;
+  }
+
+  .dashboard-search button {
+    min-height: 2rem;
+    height: 2rem;
+    padding-inline: 0.75rem;
+  }
+
+  .dashboard-actions {
+    position: absolute;
+    right: 0.75rem;
+    top: 0.75rem;
+  }
+
+  .dashboard-actions .btn {
+    min-height: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.5rem;
+  }
+
+  .dashboard-actions a[href*="/wardrobe/new"] {
+    width: 2.35rem;
+    overflow: hidden;
+    padding: 0;
+    gap: 0;
+    font-size: 0;
+  }
+
+  .dashboard-actions a[href*="/wardrobe/new"] span {
+    font-size: 1.65rem;
+  }
+
+  .dashboard-category-tabs {
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    gap: 1.35rem;
+    scrollbar-width: none;
+  }
+
+  .dashboard-category-tabs::-webkit-scrollbar,
+  .dashboard-filters::-webkit-scrollbar,
+  .dashboard-location-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dashboard-category-tabs a {
+    padding-bottom: 0.7rem;
+    font-size: 0.84rem;
+  }
+
+  .dashboard-scale {
+    justify-content: stretch;
+    margin-bottom: 0.8rem;
+  }
+
+  .dashboard-scale label {
+    width: 100%;
+    justify-content: space-between;
+    padding-block: 0.55rem;
+  }
+
+  .dashboard-scale input {
+    width: min(48vw, 11rem);
+  }
+
+  .dashboard-filters {
+    flex-wrap: nowrap;
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .dashboard-filters > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .dashboard-filters .btn,
+  .dashboard-filters .select {
+    min-height: 2.35rem;
+    height: 2.35rem;
+    border-radius: 0.45rem;
+  }
+
+  .dashboard-filters .dropdown-content {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    top: 8.75rem;
+    width: auto;
+    max-height: calc(100dvh - 10rem);
+    overflow-y: auto;
+  }
+
+  .dashboard-location-tabs {
+    margin-inline: -0.75rem;
+    width: auto;
+    max-width: none;
+    overflow-x: auto;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .dashboard-location-tabs a {
+    min-width: max-content;
+    flex: 0 0 auto;
+    padding: 0.7rem 1rem;
+  }
+
+  .dashboard-shortcuts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .dashboard-shortcuts a {
+    font-size: 0.82rem;
+  }
+
+  .dashboard-grid {
+    gap: 0.75rem;
+  }
+
+  .wardrobe-card {
+    border-radius: 0.55rem;
+  }
+
+  .wardrobe-card figure {
+    aspect-ratio: 1 / 1.08;
+  }
+
+  .wardrobe-card figure img {
+    padding: 0.55rem;
+  }
+
+  .wardrobe-card [data-card-prev],
+  .wardrobe-card [data-card-next] {
+    width: 2rem;
+    height: 2rem;
+    opacity: 0.74;
+  }
+
+  .wardrobe-card [data-card-prev] {
+    left: 0.45rem;
+  }
+
+  .wardrobe-card [data-card-next] {
+    right: 0.45rem;
+  }
+
+  .wardrobe-card > div {
+    padding: 0.7rem;
+  }
+
+  .wardrobe-card h2 {
+    font-size: 0.9rem;
+    line-height: 1.2;
+  }
+
+  .wardrobe-card .text-sm {
+    font-size: 0.74rem;
+  }
+
+  .wardrobe-card .rounded-md {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .detail-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin-inline: -0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: color-mix(in oklab, #020617 92%, transparent);
+    border-bottom: 1px solid rgba(30, 41, 59, 0.75);
+    backdrop-filter: blur(14px);
+  }
+
+  .detail-layout {
+    gap: 1rem;
+  }
+
+  .detail-photo-frame {
+    margin-inline: -0.75rem;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .detail-photo-frame img {
+    padding: 1rem;
+  }
+
+  .detail-thumbs {
+    display: flex;
+    max-width: none;
+    gap: 0.6rem;
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+    overflow-x: auto;
+  }
+
+  .detail-thumbs > * {
+    width: 4.75rem;
+    min-width: 4.75rem;
+  }
+
+  .detail-info-column h1 {
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .detail-info-column form {
+    margin-inline: -0.75rem;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .detail-info-column form > div {
+    grid-template-columns: 6rem minmax(0, 1fr);
+    padding-inline: 0.75rem;
+  }
+
+  .detail-info-column input,
+  .detail-info-column select,
+  .detail-info-column textarea,
+  .detail-info-column button {
+    font-size: 16px;
+  }
+
+  #photoEditorModal {
+    align-items: stretch;
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.5rem max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  #photoEditorModal > div {
+    max-height: none;
+    height: 100%;
+    padding: 0.75rem;
+  }
+
+  #photoDropZone {
+    min-height: 45dvh;
+  }
+}

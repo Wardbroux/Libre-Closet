@@ -1,6 +1,6 @@
-<main class="min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-8">
+<main class="wardrobe-detail min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-8">
   <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
-    <div class="flex items-center justify-between gap-3">
+    <div class="detail-topbar flex items-center justify-between gap-3">
       <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="btn btn-ghost btn-sm gap-2 text-slate-100">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
@@ -36,9 +36,9 @@
       </div>
     </div>
 
-    <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(390px,0.9fr)]">
-      <div class="flex flex-col gap-4">
-        <figure id="detailPhotoFrame" class="group/photo relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
+    <section class="detail-layout grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(390px,0.9fr)]">
+      <div class="detail-photo-column flex flex-col gap-4">
+        <figure id="detailPhotoFrame" class="detail-photo-frame group/photo relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
           {{#if garment.photo}}
           <img id="mainGarmentPhoto" src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain p-6" />
           <button type="button" data-gallery-prev class="absolute inset-y-0 left-0 flex w-1/4 items-center justify-start bg-gradient-to-r from-slate-950/35 to-transparent pl-4 text-white opacity-0 transition hover:opacity-100 group-hover/photo:opacity-70">
@@ -60,7 +60,7 @@
           {{/if}}
         </figure>
 
-        <div id="photoThumbList" class="grid max-w-xl grid-cols-5 gap-3">
+        <div id="photoThumbList" class="detail-thumbs grid max-w-xl grid-cols-5 gap-3">
           {{#each galleryPhotos}}
           <button type="button" draggable="true" data-photo-thumb data-photo-id="{{this.id}}" data-photo-name="{{this.fileName}}" class="aspect-square rounded-lg border border-slate-700 bg-slate-900 p-2 text-left hover:border-emerald-400 data-[active=true]:border-emerald-400" {{#if @first}}data-active="true"{{/if}}>
             <img src="/file/nobg/{{this.fileName}}" alt="{{../garment.name}}" class="h-full w-full object-contain" />
@@ -93,7 +93,7 @@
         {{/if}}
       </div>
 
-      <div class="flex flex-col gap-5">
+      <div class="detail-info-column flex flex-col gap-5">
         <div id="detailSummaryHeader" class="view-mode">
           <div id="detailCategoryBadge" class="view-mode mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
             {{categoryLabel}}

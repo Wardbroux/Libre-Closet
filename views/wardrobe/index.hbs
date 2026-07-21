@@ -1,5 +1,5 @@
-<main class="min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-8">
-  <header class="mb-5 flex flex-col gap-4 border-b border-slate-800 pb-4 lg:flex-row lg:items-center lg:justify-between">
+<main class="wardrobe-dashboard min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-8">
+  <header class="dashboard-header mb-5 flex flex-col gap-4 border-b border-slate-800 pb-4 lg:flex-row lg:items-center lg:justify-between">
     <div class="flex items-center gap-3">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <form method="get" action="/wardrobe" class="flex w-full max-w-2xl items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 shadow-lg shadow-black/20">
+    <form method="get" action="/wardrobe" class="dashboard-search flex w-full max-w-2xl items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 shadow-lg shadow-black/20">
       {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
       <input type="hidden" name="category" value="{{search.category}}">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 text-slate-400">
@@ -43,7 +43,7 @@
       <button type="submit" class="btn btn-ghost btn-sm border border-slate-700">Search</button>
     </form>
 
-    <div class="flex items-center gap-2">
+    <div class="dashboard-actions flex items-center gap-2">
       <a href="/wardrobe/settings" class="btn btn-ghost btn-square border border-slate-800 bg-slate-900 text-slate-200" title="Settings">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.661.837.145.063.287.13.427.203.33.17.724.15 1.032-.064l1.055-.732a1.125 1.125 0 0 1 1.45.12l1.833 1.833c.389.389.44 1.002.12 1.45l-.732 1.055c-.214.308-.234.702-.064 1.032.073.14.14.282.203.427.151.348.463.598.837.661l1.281.213c.542.09.94.56.94 1.11v2.592c0 .55-.398 1.02-.94 1.11l-1.281.213a1.125 1.125 0 0 0-.837.661c-.063.145-.13.287-.203.427-.17.33-.15.724.064 1.032l.732 1.055c.32.448.269 1.061-.12 1.45l-1.833 1.833a1.125 1.125 0 0 1-1.45.12l-1.055-.732a1.125 1.125 0 0 0-1.032-.064c-.14.073-.282.14-.427.203a1.125 1.125 0 0 0-.661.837l-.213 1.281c-.09.542-.56.94-1.11.94h-2.592c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.125 1.125 0 0 0-.661-.837 7.03 7.03 0 0 1-.427-.203 1.125 1.125 0 0 0-1.032.064l-1.055.732a1.125 1.125 0 0 1-1.45-.12l-1.833-1.833a1.125 1.125 0 0 1-.12-1.45l.732-1.055c.214-.308.234-.702.064-1.032a7.03 7.03 0 0 1-.203-.427 1.125 1.125 0 0 0-.837-.661l-1.281-.213A1.125 1.125 0 0 1 1.5 15.958v-2.592c0-.55.398-1.02.94-1.11l1.281-.213c.374-.063.686-.313.837-.661.063-.145.13-.287.203-.427.17-.33.15-.724-.064-1.032L3.965 8.868a1.125 1.125 0 0 1 .12-1.45l1.833-1.833a1.125 1.125 0 0 1 1.45-.12l1.055.732c.308.214.702.234 1.032.064.14-.073.282-.14.427-.203.348-.151.598-.463.661-.837l.213-1.281Z" />
@@ -70,7 +70,7 @@
   </section>
   {{/if}}
 
-  <nav class="mb-5 flex gap-8 overflow-x-auto border-b border-slate-800 text-sm sm:text-base">
+  <nav class="dashboard-category-tabs mb-5 flex gap-8 overflow-x-auto border-b border-slate-800 text-sm sm:text-base">
     {{#each categoryTabs}}
     <a
       href="{{this.href}}"
@@ -81,14 +81,14 @@
     {{/each}}
   </nav>
 
-  <div class="mb-5 flex justify-end">
+  <div class="dashboard-scale mb-5 flex justify-end">
     <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-300">
       <span class="whitespace-nowrap">Card size</span>
       <input id="wardrobeCardScale" type="range" min="180" max="620" step="20" value="320" class="range range-xs w-40" />
     </label>
   </div>
 
-  <form method="get" action="/wardrobe" id="filter-form" class="mb-5 flex flex-wrap items-start gap-3">
+  <form method="get" action="/wardrobe" id="filter-form" class="dashboard-filters mb-5 flex flex-wrap items-start gap-3">
     {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
     <input type="hidden" name="keyword" value="{{search.keyword}}">
     <input type="hidden" name="category" value="{{search.category}}">
@@ -170,7 +170,7 @@
   {{/if}}
 
   {{#if availableLocations.length}}
-  <nav class="mb-5 flex w-full max-w-3xl overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
+  <nav class="dashboard-location-tabs mb-5 flex w-full max-w-3xl overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
     <a href="{{allLocationsHref}}" class="min-w-36 flex-1 px-4 py-3 text-center text-sm {{#unless search.location}}bg-slate-800 text-white{{else}}text-slate-300{{/unless}}">
       All locations
     </a>
@@ -183,7 +183,7 @@
   {{/if}}
 
   {{#if categoryShortcuts.length}}
-  <nav class="mb-8 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+  <nav class="dashboard-shortcuts mb-8 grid max-w-5xl grid-cols-1 gap-x-16 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
     {{#each categoryShortcuts}}
     <a href="{{this.href}}" class="text-emerald-400 hover:text-emerald-300">{{this.label}}</a>
     {{/each}}
@@ -195,9 +195,9 @@
   </div>
 
   {{#if garments.length}}
-  <section id="wardrobeGrid" class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(var(--wardrobe-card-min, 320px), 1fr));">
+  <section id="wardrobeGrid" class="dashboard-grid grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(var(--wardrobe-card-min, 320px), 1fr));">
     {{#each garments}}
-    <a href="/wardrobe/{{this.id}}{{#if ../viewOwner}}?ownerId={{../viewOwner}}{{/if}}" class="group overflow-hidden rounded-lg border border-slate-800 bg-slate-900/80 shadow-lg shadow-black/20 transition hover:border-emerald-500/60 {{#if this.archived}}opacity-50{{/if}}">
+    <a href="/wardrobe/{{this.id}}{{#if ../viewOwner}}?ownerId={{../viewOwner}}{{/if}}" class="wardrobe-card group overflow-hidden rounded-lg border border-slate-800 bg-slate-900/80 shadow-lg shadow-black/20 transition hover:border-emerald-500/60 {{#if this.archived}}opacity-50{{/if}}">
       <figure class="group/card-photo relative aspect-[4/3] bg-slate-950" data-card-gallery='{{{json this.galleryPhotos}}}'>
         {{#if this.location}}
         <span class="absolute left-3 top-3 z-10 rounded-md border border-emerald-500/30 bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-emerald-300 shadow-lg shadow-black/30 backdrop-blur">
@@ -256,13 +256,14 @@
       const grid = document.getElementById('wardrobeGrid');
       if (!slider || !grid) return;
       const stored = localStorage.getItem('wardrobeCardMin');
+      const mobileDefault = window.matchMedia('(max-width: 640px)').matches ? '180' : slider.value;
       const setSize = (value) => {
         const size = Math.max(180, Math.min(620, Number(value) || 320));
         slider.value = String(size);
         grid.style.setProperty('--wardrobe-card-min', `${size}px`);
         localStorage.setItem('wardrobeCardMin', String(size));
       };
-      setSize(stored || slider.value);
+      setSize(stored || mobileDefault);
       slider.addEventListener('input', () => setSize(slider.value));
     })();
     (() => {

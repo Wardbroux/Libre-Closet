@@ -16,9 +16,14 @@
   ],
   "id": "/wardrobe",
   "start_url": "/wardrobe",
-  "theme_color": "#222428",
-  "background_color": "#fafafa",
+  "theme_color": "#020617",
+  "background_color": "#020617",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait",
   "scope": "/",
   "shortcuts": [
     {
@@ -28,19 +33,19 @@
       "url": "/wardrobe"
     },
     {
-      "name": "My Outfits",
-      "short_name": "Outfits",
-      "description": "Browse your saved outfits",
-      "url": "/outfits"
+      "name": "New Item",
+      "short_name": "New Item",
+      "description": "Add a wardrobe item",
+      "url": "/wardrobe/new"
     },
     {
-      "name": "Add Garment",
-      "short_name": "Add Garment",
-      "description": "Catalog a new clothing item",
-      "url": "/wardrobe/new"
+      "name": "Locations",
+      "short_name": "Locations",
+      "description": "Manage wardrobe locations",
+      "url": "/wardrobe/settings"
     }
   ],
-  "description": "A free, open-source digital wardrobe organizer. Catalog your clothing, build outfits, and share looks — self-hostable and privacy-first.",
+  "description": "A self-hosted wardrobe inventory for clothing, shoes, locations, tags, and photos.",
   "screenshots": [
     {
       "src": "/assets/screenshots/Screenshot_1.webp",
