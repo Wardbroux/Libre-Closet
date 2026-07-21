@@ -210,6 +210,16 @@
     const categoryBreadcrumbs = document.getElementById('categoryBreadcrumbs');
     const categoryOptions = document.getElementById('categoryPickerOptions');
     const sizeSelect = document.querySelector('select[name="size"]');
+    const originalSizeGroups = sizeSelect
+      ? [...sizeSelect.querySelectorAll('optgroup')].map((group) => ({
+          label: group.label,
+          kind: group.dataset.sizeKind,
+          options: [...group.querySelectorAll('option')].map((option) => ({
+            value: option.value,
+            text: option.textContent,
+          })),
+        }))
+      : [];
 
     const pathParts = (path) => path.split('>').map((part) => part.trim()).filter(Boolean);
     const findCategoryNode = (nodes, value) => {
@@ -228,16 +238,23 @@
     };
     const syncSizeOptions = () => {
       if (!sizeSelect || !categoryInput) return;
+      const previousValue = sizeSelect.value;
       const wantsShoes = categoryInput.value.startsWith('Shoes');
-      for (const group of sizeSelect.querySelectorAll('optgroup')) {
-        const isShoeGroup = group.dataset.sizeKind === 'shoes';
-        const shouldHide = wantsShoes ? !isShoeGroup : isShoeGroup;
-        group.hidden = shouldHide;
-        group.style.display = shouldHide ? 'none' : '';
-        for (const option of group.querySelectorAll('option')) option.disabled = group.hidden;
+      const wantedKind = wantsShoes ? 'shoes' : 'clothing';
+      sizeSelect.innerHTML = '<option value="">Select size</option>';
+      for (const group of originalSizeGroups.filter((group) => group.kind === wantedKind)) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = group.label;
+        optgroup.dataset.sizeKind = group.kind;
+        for (const source of group.options) {
+          const option = document.createElement('option');
+          option.value = source.value;
+          option.textContent = source.text;
+          optgroup.appendChild(option);
+        }
+        sizeSelect.appendChild(optgroup);
       }
-      const selectedOption = sizeSelect.selectedOptions[0];
-      if (selectedOption?.parentElement?.hidden) sizeSelect.value = '';
+      sizeSelect.value = [...sizeSelect.options].some((option) => option.value === previousValue) ? previousValue : '';
     };
     const renderCategoryPicker = (parent = '') => {
       categoryOptions.innerHTML = '';

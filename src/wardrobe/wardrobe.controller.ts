@@ -1155,7 +1155,17 @@ export class WardrobeController {
   }
 
   private sizeFilterGroups(query: SearchGarmentDto, viewOwner?: number) {
-    return SIZE_GROUPS.map((group) => ({
+    const category = query.category
+      ? this.canonicalCategory(query.category)
+      : '';
+    const hasCategory = Boolean(category);
+    const wantsShoes = category.startsWith('Shoes');
+
+    return SIZE_GROUPS.filter((group) => {
+      if (!hasCategory) return true;
+      const isShoeGroup = group.label === 'Shoe sizes';
+      return wantsShoes ? isShoeGroup : !isShoeGroup;
+    }).map((group) => ({
       label: group.label,
       sizes: group.sizes.map((size) => ({
         label: size,
