@@ -120,6 +120,7 @@ export class WardrobeController {
       availableCategories,
       categoryGroups: this.categoryGroups(filters.categories),
       categoryPanel,
+      categoryTree: this.editCategoryTree(filters.categories),
       categoryShortcuts: categoryPanel.options,
       filterChips: this.filterChips(query, viewOwner),
       activeCategory: query.category || 'All',

@@ -89,36 +89,16 @@
       <input type="hidden" name="location" value="{{search.location}}">
       <input type="hidden" name="size" value="{{search.size}}">
 
-    <details class="dropdown">
-      <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">
-        {{categoryPanel.title}}
-      </summary>
-      <div class="dropdown-content z-30 mt-2 w-80 rounded-lg border border-slate-800 bg-slate-950 p-3 shadow-xl">
-        {{#if categoryPanel.breadcrumbs.length}}
-        <div class="mb-3 flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3 text-xs text-slate-400">
-          {{#each categoryPanel.breadcrumbs}}
-          <a href="{{this.href}}" class="hover:text-emerald-300">{{this.label}}</a>
-          {{#unless @last}}<span>/</span>{{/unless}}
-          {{/each}}
-        </div>
-        {{else}}
-        <div class="mb-3 border-b border-slate-800 pb-3 text-sm font-semibold text-white">Choose a category</div>
-        {{/if}}
-        <div class="space-y-1">
-          {{#each categoryPanel.options}}
-          <a href="{{this.href}}" class="flex items-center justify-between rounded-md px-3 py-3 text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200">
-            <span>{{this.label}}</span>
-            {{#if this.hasChildren}}<span class="text-slate-500">&gt;</span>{{/if}}
-          </a>
-          {{/each}}
-        </div>
-        {{#unless categoryPanel.options.length}}
-        <a href="/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}" class="block rounded-md px-3 py-3 text-sm text-slate-300 hover:bg-slate-800">
-          Back
-        </a>
-        {{/unless}}
+    <div class="dashboard-category-filter relative">
+      <button type="button" id="dashboardCategoryButton" class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">
+        <span id="dashboardCategoryLabel">{{categoryPanel.title}}</span>
+        <span class="text-slate-500">&gt;</span>
+      </button>
+      <div id="dashboardCategoryPanel" class="absolute left-0 top-full z-40 mt-2 hidden w-80 rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
+        <div id="dashboardCategoryBreadcrumbs" class="mb-2 flex flex-wrap items-center gap-2 border-b border-slate-800 px-2 pb-2 text-xs text-slate-400"></div>
+        <div id="dashboardCategoryOptions" class="max-h-80 overflow-y-auto"></div>
       </div>
-    </details>
+    </div>
 
     <details class="dropdown">
       <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">Size</summary>
@@ -253,6 +233,105 @@
   {{/if}}
 
   <script>
+    (() => {
+      const categoryTree = {{{json categoryTree}}};
+      const form = document.getElementById('filter-form');
+      const categoryInput = form?.querySelector('input[name="category"]');
+      const button = document.getElementById('dashboardCategoryButton');
+      const label = document.getElementById('dashboardCategoryLabel');
+      const panel = document.getElementById('dashboardCategoryPanel');
+      const breadcrumbs = document.getElementById('dashboardCategoryBreadcrumbs');
+      const options = document.getElementById('dashboardCategoryOptions');
+      if (!form || !categoryInput || !button || !label || !panel || !breadcrumbs || !options) return;
+
+      const pathParts = (path) => path.split('>').map((part) => part.trim()).filter(Boolean);
+      const findNode = (nodes, value) => {
+        for (const node of nodes) {
+          if (node.value === value) return node;
+          const child = findNode(node.children || [], value);
+          if (child) return child;
+        }
+        return null;
+      };
+      const childNodes = (parent = '') => parent ? findNode(categoryTree, parent)?.children || [] : categoryTree;
+      const hasChildren = (path) => childNodes(path).length > 0;
+      const setBrowsingLabel = (value) => {
+        label.textContent = value || categoryInput.value || 'Category';
+      };
+      const render = (parent = '') => {
+        setBrowsingLabel(parent);
+        breadcrumbs.innerHTML = '';
+        options.innerHTML = '';
+
+        const rootButton = document.createElement('button');
+        rootButton.type = 'button';
+        rootButton.textContent = 'All';
+        rootButton.className = 'hover:text-emerald-300';
+        rootButton.dataset.categoryBrowse = '';
+        breadcrumbs.appendChild(rootButton);
+
+        pathParts(parent).forEach((crumb, index, parts) => {
+          breadcrumbs.append(' / ');
+          const value = parts.slice(0, index + 1).join(' > ');
+          const crumbButton = document.createElement('button');
+          crumbButton.type = 'button';
+          crumbButton.textContent = crumb;
+          crumbButton.className = 'hover:text-emerald-300';
+          crumbButton.dataset.categoryBrowse = value;
+          breadcrumbs.appendChild(crumbButton);
+        });
+
+        const allOption = document.createElement('button');
+        allOption.type = 'button';
+        allOption.textContent = parent ? `Use ${parent}` : 'All categories';
+        allOption.dataset.categorySelect = parent;
+        allOption.className = 'mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200';
+        options.appendChild(allOption);
+
+        for (const option of childNodes(parent)) {
+          const optionHasChildren = hasChildren(option.value);
+          const optionButton = document.createElement('button');
+          optionButton.type = 'button';
+          optionButton.dataset[optionHasChildren ? 'categoryBrowse' : 'categorySelect'] = option.value;
+          optionButton.className = 'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200';
+          const optionLabel = document.createElement('span');
+          optionLabel.textContent = option.label;
+          const arrow = document.createElement('span');
+          arrow.className = 'text-slate-500';
+          arrow.textContent = optionHasChildren ? '>' : '';
+          optionButton.append(optionLabel, arrow);
+          options.appendChild(optionButton);
+        }
+      };
+
+      panel.addEventListener('click', (event) => {
+        const target = event.target.closest('[data-category-browse], [data-category-select]');
+        if (!target) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (target.dataset.categoryBrowse !== undefined) {
+          render(target.dataset.categoryBrowse);
+          return;
+        }
+        categoryInput.value = target.dataset.categorySelect || '';
+        form.submit();
+      });
+
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        panel.classList.toggle('hidden');
+        render('');
+      });
+
+      document.addEventListener('click', (event) => {
+        if (panel.classList.contains('hidden')) return;
+        if (event.target.closest('#dashboardCategoryButton') || event.target.closest('#dashboardCategoryPanel')) return;
+        panel.classList.add('hidden');
+        label.textContent = categoryInput.value || 'Category';
+      });
+    })();
+
     (() => {
       const slider = document.getElementById('wardrobeCardScale');
       const grid = document.getElementById('wardrobeGrid');
