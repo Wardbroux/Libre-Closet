@@ -918,6 +918,20 @@ export class WardrobeController {
       ['Bottoms > Joggers', 'Trousers & leggings > Other trousers'],
       ['Bottoms > Leggings', 'Trousers & leggings > Leggings'],
       ['Suits & Sets', 'Suits & blazers'],
+      ['Shoes > Trainers', 'Shoes > Sneakers'],
+      ['Shoes > Boots > Over-knee boots', 'Shoes > Boots > Over-the-knee boots'],
+      ['Shoes > Boots > Chelsea boots', 'Shoes > Boots > Ankle boots'],
+      ['Shoes > Boots > Combat boots', 'Shoes > Boots > Work boots'],
+      ['Shoes > Boots > Hiking boots', 'Shoes > Boots > Work boots'],
+      ['Shoes > Flats > Ballet flats', 'Shoes > Ballerinas'],
+      [
+        'Shoes > Flats > Loafers',
+        'Shoes > Boat shoes, loafers & moccasins',
+      ],
+      [
+        'Shoes > Flats > Moccasins',
+        'Shoes > Boat shoes, loafers & moccasins',
+      ],
     ];
 
     for (const [from, to] of aliases) {

@@ -490,7 +490,6 @@ export class GarmentService {
           { category: { $like: 'Suits & blazers%' } },
           { category: { $like: 'Lingerie & nightwear%' } },
           { category: { $like: 'Jumpsuits & playsuits%' } },
-          { category: 'Maternity clothes' },
           { category: 'Costumes & special outfits' },
           { category: 'Other clothing' },
           { category: { $like: 'Tops%' } },
@@ -590,6 +589,20 @@ export class GarmentService {
       ['Bottoms > Joggers', 'Trousers & leggings > Other trousers'],
       ['Bottoms > Leggings', 'Trousers & leggings > Leggings'],
       ['Suits & Sets', 'Suits & blazers'],
+      ['Shoes > Trainers', 'Shoes > Sneakers'],
+      ['Shoes > Boots > Over-knee boots', 'Shoes > Boots > Over-the-knee boots'],
+      ['Shoes > Boots > Chelsea boots', 'Shoes > Boots > Ankle boots'],
+      ['Shoes > Boots > Combat boots', 'Shoes > Boots > Work boots'],
+      ['Shoes > Boots > Hiking boots', 'Shoes > Boots > Work boots'],
+      ['Shoes > Flats > Ballet flats', 'Shoes > Ballerinas'],
+      [
+        'Shoes > Flats > Loafers',
+        'Shoes > Boat shoes, loafers & moccasins',
+      ],
+      [
+        'Shoes > Flats > Moccasins',
+        'Shoes > Boat shoes, loafers & moccasins',
+      ],
     ];
 
     for (const [from, to] of aliases) {
