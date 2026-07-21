@@ -216,7 +216,10 @@
       </figure>
       <div class="space-y-2 p-4">
         <h2 class="truncate text-lg font-semibold text-white">{{#if this.name}}{{this.name}}{{else}}Untitled item{{/if}}</h2>
-        <p class="truncate text-sm text-slate-400">{{#if this.brand}}{{this.brand}}{{/if}}{{#if this.size}}<span class="px-2">.</span>{{this.size}}{{/if}}</p>
+        <div class="flex items-center justify-between gap-3 text-sm text-slate-400">
+          <p class="min-w-0 truncate">{{#if this.brand}}{{this.brand}}{{/if}}{{#if this.size}}<span class="px-2">.</span>{{this.size}}{{/if}}</p>
+          <p class="shrink-0 truncate text-right text-emerald-300">{{#each (splitCategoryPath this.category)}}<span>{{this}}</span>{{#unless @last}}<span class="px-1 text-slate-500">></span>{{/unless}}{{/each}}</p>
+        </div>
         <div class="flex min-h-7 items-end justify-between gap-3 pt-1">
           <div class="flex flex-wrap gap-2">
             {{#each (splitCsv this.tags)}}

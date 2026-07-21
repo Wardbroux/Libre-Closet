@@ -7,11 +7,33 @@
         </svg>
         Back to all items
       </a>
+      <div class="flex items-center gap-2">
       {{#if canEdit}}
       <button id="editItemToggle" type="button" class="btn btn-outline btn-sm border-slate-600 bg-slate-900/70 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15">
         Edit item
       </button>
       {{/if}}
+      {{#if canDelete}}
+      <details class="dropdown dropdown-end">
+        <summary class="btn btn-outline btn-sm btn-square border-slate-600 bg-slate-900/70 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15" title="More actions">
+          <span class="sr-only">More actions</span>
+          <span class="flex flex-col gap-1">
+            <span class="block h-0.5 w-4 rounded bg-current"></span>
+            <span class="block h-0.5 w-4 rounded bg-current"></span>
+            <span class="block h-0.5 w-4 rounded bg-current"></span>
+          </span>
+        </summary>
+        <div class="dropdown-content z-30 mt-2 w-56 rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
+          <button class="w-full rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-amber-500/15 hover:text-amber-200" hx-post="/wardrobe/{{garment.id}}/archive" hx-confirm="{{#if garment.archived}}{{t 'lang.CONFIRM_UNARCHIVE'}}{{else}}{{t 'lang.CONFIRM_ARCHIVE'}}{{/if}}" hx-indicator="#loading">
+            {{#if garment.archived}}Unarchive item{{else}}Archive item{{/if}}
+          </button>
+          <button class="mt-1 w-full rounded-md px-3 py-2 text-left text-sm text-red-300 hover:bg-red-500/15 hover:text-red-200" hx-delete="/wardrobe/{{garment.id}}" hx-confirm="{{t 'lang.CONFIRM_DELETE'}}" hx-indicator="#loading">
+            Delete item
+          </button>
+        </div>
+      </details>
+      {{/if}}
+      </div>
     </div>
 
     <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(390px,0.9fr)]">
@@ -78,7 +100,7 @@
             <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
-          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.location}}true{{/if}}">
             <div class="text-slate-300">Location</div>
             <div class="view-mode justify-self-end rounded-lg border border-emerald-500/25 bg-emerald-500/15 px-4 py-2 font-medium text-emerald-200">{{#if garment.location}}{{garment.location}}{{else}}Unassigned{{/if}}</div>
             <select name="location" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
@@ -89,7 +111,7 @@
             </select>
           </div>
 
-          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="edit-mode hidden grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Category</div>
             <div class="view-mode flex flex-wrap items-center justify-end gap-2 text-emerald-200">
               {{#each (splitCategoryPath garment.category)}}<span>{{this}}</span>{{#unless @last}}<span class="text-slate-500">></span>{{/unless}}{{/each}}
@@ -107,13 +129,13 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.brand}}true{{/if}}">
             <div class="text-slate-300">Brand</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.brand}}{{garment.brand}}{{else}}-{{/if}}</div>
             <input name="brand" value="{{garment.brand}}" placeholder="Puma" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
-          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.color}}true{{/if}}">
             <div class="text-slate-300">Colour</div>
             <div class="view-mode flex flex-wrap justify-end gap-2">
               {{#each (splitCsv garment.color)}}<span class="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white"><span class="size-2.5 rounded-full border border-white/40" style="{{colorDotStyle this}}"></span>{{this}}</span>{{/each}}
@@ -137,7 +159,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.size}}true{{/if}}">
             <div class="text-slate-300">Size</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.size}}{{garment.size}}{{else}}-{{/if}}</div>
             <select name="size" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
@@ -152,7 +174,7 @@
             </select>
           </div>
 
-          <div class="grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="optional-detail-row grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.tags}}true{{/if}}">
             <div class="text-slate-300">Tags</div>
             <div class="view-mode flex flex-wrap justify-start gap-2 sm:justify-end">
               {{#each (splitCsv garment.tags)}}<span class="rounded-md border px-3 py-1 text-sm" style="{{tagStyle this}}">{{this}}</span>{{/each}}
@@ -174,7 +196,7 @@
             </div>
           </div>
 
-          <div class="grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="optional-detail-row grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.notes}}true{{/if}}">
             <div class="text-slate-300">Notes</div>
             <p class="view-mode justify-self-end rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3 text-slate-200">{{#if garment.notes}}{{garment.notes}}{{else}}-{{/if}}</p>
             <textarea name="notes" rows="2" placeholder="Comfortable everyday sneakers." class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right text-white outline-none focus:border-emerald-400">{{garment.notes}}</textarea>
@@ -188,19 +210,6 @@
       </div>
     </section>
 
-    {{#if canDelete}}
-    <section class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-      <h2 class="mb-4 text-lg font-semibold text-white">Actions</h2>
-      <div class="grid gap-3 sm:grid-cols-2">
-        <button class="btn btn-outline border-slate-700 text-slate-100 hover:border-amber-300 hover:bg-amber-500/15" hx-post="/wardrobe/{{garment.id}}/archive" hx-confirm="{{#if garment.archived}}{{t 'lang.CONFIRM_UNARCHIVE'}}{{else}}{{t 'lang.CONFIRM_ARCHIVE'}}{{/if}}" hx-indicator="#loading">
-          {{#if garment.archived}}Unarchive item{{else}}Archive item{{/if}}
-        </button>
-        <button class="btn btn-outline border-red-500/40 text-red-300 hover:border-red-300 hover:bg-red-500/15" hx-delete="/wardrobe/{{garment.id}}" hx-confirm="{{t 'lang.CONFIRM_DELETE'}}" hx-indicator="#loading">
-          Delete item
-        </button>
-      </div>
-    </section>
-    {{/if}}
   </div>
 
   {{#if canEdit}}
@@ -253,12 +262,16 @@
       for (const el of document.querySelectorAll('.edit-mode')) {
         el.classList.toggle('hidden', !editing);
       }
+      for (const el of document.querySelectorAll('.optional-detail-row')) {
+        el.classList.toggle('hidden', !editing && el.dataset.hasValue !== 'true');
+      }
       const toggle = document.getElementById('editItemToggle');
       if (toggle) toggle.textContent = editing ? 'Editing' : 'Edit item';
     };
 
     document.getElementById('editItemToggle')?.addEventListener('click', () => setEditing(true));
     document.getElementById('cancelEditItem')?.addEventListener('click', () => setEditing(false));
+    setEditing(false);
 
     const categoryTree = {{{json categoryTree}}};
     const categoryInput = document.getElementById('categoryValueInput');
