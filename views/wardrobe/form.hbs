@@ -158,16 +158,18 @@
         <div id="photoDropZone" class="relative flex min-h-[320px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-600 bg-slate-900/70">
           <div id="photoDropHint" class="px-6 text-center text-slate-300">
             <div class="text-lg font-semibold text-white">Drop photo here</div>
-            <div class="mt-2 text-sm text-slate-400">or click to upload</div>
+            <div class="mt-2 text-sm text-slate-400">or use camera, gallery, or files</div>
           </div>
           <canvas id="photoEditorCanvas" class="hidden max-h-[68vh] max-w-full touch-none rounded-md"></canvas>
         </div>
         <input id="photoEditorFileInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+        <input id="photoEditorCameraInput" type="file" class="hidden" accept="image/*" capture="environment" />
+        <input id="photoEditorFilesInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
       </div>
       <div class="flex flex-col gap-4">
         <div>
           <h2 class="text-xl font-semibold text-white">Photo</h2>
-          <p id="photoEditorStatus" class="mt-1 text-sm text-slate-400">Upload or drag a photo, then frame it.</p>
+          <p id="photoEditorStatus" class="mt-1 text-sm text-slate-400">Choose camera, gallery, files, or drag a photo.</p>
         </div>
         <label class="grid gap-2 text-sm text-slate-300">
           Zoom
@@ -181,10 +183,16 @@
           Up / down
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
-        <div class="mt-auto flex justify-end gap-3">
-          <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
-          <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
-          <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Use photo</button>
+        <div class="mt-auto flex flex-col gap-2">
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" id="photoEditorCamera" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Camera</button>
+            <button type="button" id="photoEditorChoose" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Gallery</button>
+            <button type="button" id="photoEditorFiles" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Files</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="photoEditorCancel" class="rounded-lg border border-slate-700 px-3 py-2 font-semibold text-slate-200 hover:border-slate-500 hover:bg-slate-800">Cancel</button>
+            <button type="button" id="photoEditorSave" class="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-2 font-semibold text-white hover:border-emerald-500 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-700 disabled:text-slate-400" disabled>Use photo</button>
+          </div>
         </div>
       </div>
     </div>
@@ -384,7 +392,11 @@
     const photoDropHint = document.getElementById('photoDropHint');
     const photoCanvas = document.getElementById('photoEditorCanvas');
     const photoFileInput = document.getElementById('photoEditorFileInput');
+    const photoCameraInput = document.getElementById('photoEditorCameraInput');
+    const photoFilesInput = document.getElementById('photoEditorFilesInput');
     const photoChoose = document.getElementById('photoEditorChoose');
+    const photoCamera = document.getElementById('photoEditorCamera');
+    const photoFiles = document.getElementById('photoEditorFiles');
     const photoSave = document.getElementById('photoEditorSave');
     const photoCancel = document.getElementById('photoEditorCancel');
     const photoStatus = document.getElementById('photoEditorStatus');
@@ -445,7 +457,7 @@
     const openPhotoModal = () => {
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
-      setPhotoStatus('Upload or drag a photo, then frame it.');
+      setPhotoStatus('Choose camera, gallery, files, or drag a photo.');
     };
     const closePhotoModal = () => {
       photoModal?.classList.add('hidden');
@@ -494,7 +506,9 @@
       if (photoSave) photoSave.disabled = false;
     };
     document.getElementById('addPhotoButton')?.addEventListener('click', openPhotoModal);
+    photoCamera?.addEventListener('click', () => photoCameraInput?.click());
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
+    photoFiles?.addEventListener('click', () => photoFilesInput?.click());
     photoDropZone?.addEventListener('click', (event) => {
       if (event.target === photoCanvas) return;
       photoFileInput?.click();
@@ -504,6 +518,14 @@
     photoSave?.addEventListener('click', preparePhoto);
     photoFileInput?.addEventListener('change', async () => {
       const file = photoFileInput.files?.[0];
+      if (file) await loadPhotoBlob(file);
+    });
+    photoCameraInput?.addEventListener('change', async () => {
+      const file = photoCameraInput.files?.[0];
+      if (file) await loadPhotoBlob(file);
+    });
+    photoFilesInput?.addEventListener('change', async () => {
+      const file = photoFilesInput.files?.[0];
       if (file) await loadPhotoBlob(file);
     });
     for (const input of [zoomInput, xInput, yInput]) input?.addEventListener('input', drawPhotoPreview);
