@@ -176,8 +176,10 @@ export class WardrobeController {
       garment: null,
       viewOwner,
       categoryGroups: this.categoryGroups(filters.categories),
+      categoryTree: this.editCategoryTree(filters.categories),
       availableLocations: filters.locations,
-      sizeGroups: SIZE_GROUPS,
+      availableTags: filters.tags,
+      sizeGroups: this.editSizeGroups(),
     };
   }
 
@@ -364,8 +366,10 @@ export class WardrobeController {
       customColors,
       viewOwner: viewOwner ?? null,
       categoryGroups: this.categoryGroups(filters.categories),
+      categoryTree: this.editCategoryTree(filters.categories),
       availableLocations: filters.locations,
-      sizeGroups: SIZE_GROUPS,
+      availableTags: filters.tags,
+      sizeGroups: this.editSizeGroups(),
     };
   }
 
@@ -395,8 +399,10 @@ export class WardrobeController {
       colors: Object.values(GarmentColor),
       viewOwner: viewOwner ?? null,
       categoryGroups: this.categoryGroups(filters.categories),
+      categoryTree: this.editCategoryTree(filters.categories),
       availableLocations: filters.locations,
-      sizeGroups: SIZE_GROUPS,
+      availableTags: filters.tags,
+      sizeGroups: this.editSizeGroups(),
     };
   }
 
