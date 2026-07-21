@@ -188,7 +188,8 @@
           <input id="photoRotateInput" type="range" min="-180" max="180" step="1" value="0" class="range range-sm" />
         </label>
         <div class="mt-auto flex flex-col gap-2">
-          <div class="grid grid-cols-3 gap-2">
+          <button type="button" id="photoEditorUpload" class="hidden rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15 lg:block">Upload</button>
+          <div class="grid grid-cols-3 gap-2 lg:hidden">
             <button type="button" id="photoEditorCamera" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Camera</button>
             <button type="button" id="photoEditorChoose" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Gallery</button>
             <button type="button" id="photoEditorFiles" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Files</button>
@@ -418,6 +419,7 @@
     const photoChoose = document.getElementById('photoEditorChoose');
     const photoCamera = document.getElementById('photoEditorCamera');
     const photoFiles = document.getElementById('photoEditorFiles');
+    const photoUpload = document.getElementById('photoEditorUpload');
     const photoSave = document.getElementById('photoEditorSave');
     const photoCancel = document.getElementById('photoEditorCancel');
     const photoStatus = document.getElementById('photoEditorStatus');
@@ -543,6 +545,7 @@
       if (photoSave) photoSave.disabled = false;
     };
     document.getElementById('addPhotoButton')?.addEventListener('click', openPhotoModal);
+    photoUpload?.addEventListener('click', () => photoFileInput?.click());
     photoCamera?.addEventListener('click', () => photoCameraInput?.click());
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
     photoFiles?.addEventListener('click', () => photoFilesInput?.click());

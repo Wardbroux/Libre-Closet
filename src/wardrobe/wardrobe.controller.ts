@@ -636,7 +636,7 @@ export class WardrobeController {
     await this.garmentService.uploadGalleryPhoto(
       id,
       files,
-      fields.photoId ? parseInt(fields.photoId, 10) : undefined,
+      () => (fields.photoId ? parseInt(fields.photoId, 10) : undefined),
       viewOwner ?? userId,
       userId,
     );

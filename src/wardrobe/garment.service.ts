@@ -399,15 +399,17 @@ export class GarmentService {
   async uploadGalleryPhoto(
     id: number,
     files: AsyncIterableIterator<MultipartFile>,
-    photoId?: number,
+    photoId?: number | (() => number | undefined),
     userId?: number,
     requestingUserId?: number,
   ): Promise<void> {
     const photo = await this.storeUploadedPhoto(files, userId);
     if (!photo) return;
+    const resolvedPhotoId =
+      typeof photoId === 'function' ? photoId() : photoId;
     const garment = await this.findOne(id, requestingUserId, userId);
-    if (photoId) {
-      await this.replaceGarmentPhoto(garment, photoId, photo);
+    if (resolvedPhotoId) {
+      await this.replaceGarmentPhoto(garment, resolvedPhotoId, photo);
       return;
     }
     await this.addGarmentPhoto(garment, photo, !garment.photo);

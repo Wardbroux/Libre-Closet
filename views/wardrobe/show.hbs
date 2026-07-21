@@ -267,7 +267,8 @@
           <div class="grid gap-2">
             <button type="button" id="photoEditorDelete" class="hidden rounded-lg border border-red-500/40 px-3 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
             <button type="button" id="photoEditorMask" class="hidden rounded-lg border border-cyan-500/40 px-3 py-2 font-semibold text-cyan-200 hover:border-cyan-300 hover:bg-cyan-500/15 lg:block">Clean mask</button>
-            <div class="grid grid-cols-3 gap-2">
+            <button type="button" id="photoEditorUpload" class="hidden rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15 lg:block">Upload</button>
+            <div class="grid grid-cols-3 gap-2 lg:hidden">
               <button type="button" id="photoEditorCamera" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Camera</button>
               <button type="button" id="photoEditorChoose" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Gallery</button>
               <button type="button" id="photoEditorFiles" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Files</button>
@@ -281,7 +282,7 @@
       </div>
     </div>
   </div>
-  <dialog id="maskEditorDialog" class="w-[min(92vw,980px)] rounded-lg border border-slate-700 bg-slate-950 p-0 text-slate-100 shadow-2xl shadow-black/60 backdrop:bg-slate-950/80">
+  <dialog id="maskEditorDialog" class="fixed inset-0 m-auto w-[min(92vw,980px)] rounded-lg border border-slate-700 bg-slate-950 p-0 text-slate-100 shadow-2xl shadow-black/60 backdrop:bg-slate-950/80">
     <div class="grid max-h-[90vh] gap-4 overflow-y-auto p-4 lg:grid-cols-[1fr_260px]">
       <div class="flex min-h-[420px] items-center justify-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
         <canvas id="maskEditorCanvas" class="max-h-[76vh] max-w-full touch-none"></canvas>
@@ -613,6 +614,7 @@
     const photoChoose = document.getElementById('photoEditorChoose');
     const photoCamera = document.getElementById('photoEditorCamera');
     const photoFiles = document.getElementById('photoEditorFiles');
+    const photoUpload = document.getElementById('photoEditorUpload');
     const photoSave = document.getElementById('photoEditorSave');
     const photoCancel = document.getElementById('photoEditorCancel');
     const photoStatus = document.getElementById('photoEditorStatus');
@@ -753,7 +755,7 @@
       photoModal?.classList.add('flex');
       setPhotoStatus(existing ? 'Loading current photo...' : 'Choose camera, gallery, files, or drag a photo.');
       if (existing && photoName) {
-        const response = await fetch(`/file/${photoName}`);
+        const response = await fetch(`/file/nobg/${photoName}`);
         await loadPhotoBlob(await response.blob());
       }
     };
@@ -892,6 +894,7 @@
         photoMask.disabled = false;
       }
     });
+    photoUpload?.addEventListener('click', () => photoFileInput?.click());
     photoCamera?.addEventListener('click', () => photoCameraInput?.click());
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
     photoFiles?.addEventListener('click', () => photoFilesInput?.click());
