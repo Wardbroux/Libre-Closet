@@ -180,12 +180,16 @@
   </nav>
   {{/if}}
 
-  <div class="mb-4 flex items-center justify-between text-sm text-slate-400">
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
     <span>{{garments.length}} {{t 'lang.RESULTS'}}</span>
+    <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-300">
+      <span class="whitespace-nowrap">Card size</span>
+      <input id="wardrobeCardScale" type="range" min="180" max="420" step="20" value="320" class="range range-xs w-36" />
+    </label>
   </div>
 
   {{#if garments.length}}
-  <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+  <section id="wardrobeGrid" class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(var(--wardrobe-card-min, 320px), 1fr));">
     {{#each garments}}
     <a href="/wardrobe/{{this.id}}{{#if ../viewOwner}}?ownerId={{../viewOwner}}{{/if}}" class="group overflow-hidden rounded-lg border border-slate-800 bg-slate-900/80 shadow-lg shadow-black/20 transition hover:border-emerald-500/60 {{#if this.archived}}opacity-50{{/if}}">
       <figure class="relative aspect-[4/3] bg-slate-950">
@@ -227,4 +231,21 @@
     {{/if}}
   </section>
   {{/if}}
+
+  <script>
+    (() => {
+      const slider = document.getElementById('wardrobeCardScale');
+      const grid = document.getElementById('wardrobeGrid');
+      if (!slider || !grid) return;
+      const stored = localStorage.getItem('wardrobeCardMin');
+      const setSize = (value) => {
+        const size = Math.max(180, Math.min(420, Number(value) || 320));
+        slider.value = String(size);
+        grid.style.setProperty('--wardrobe-card-min', `${size}px`);
+        localStorage.setItem('wardrobeCardMin', String(size));
+      };
+      setSize(stored || slider.value);
+      slider.addEventListener('input', () => setSize(slider.value));
+    })();
+  </script>
 </main>
