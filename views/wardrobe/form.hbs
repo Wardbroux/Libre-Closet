@@ -484,7 +484,8 @@
       const processing = waitForPhotoProcessing();
       uploadInput.dispatchEvent(new Event('change'));
       await processing;
-      if (newPhotoPreviewImg) newPhotoPreviewImg.src = URL.createObjectURL(file);
+      const previewFile = nobgInput?.files?.[0] || file;
+      if (newPhotoPreviewImg) newPhotoPreviewImg.src = URL.createObjectURL(previewFile);
       newPhotoPreview?.classList.remove('hidden');
       if (newPhotoStatus) newPhotoStatus.textContent = nobgInput?.files?.length ? 'Photo ready with background removed.' : 'Photo ready.';
       closePhotoModal();
