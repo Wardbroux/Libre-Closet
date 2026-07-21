@@ -236,6 +236,7 @@
         <div>
           <h2 class="text-xl font-semibold text-white">Photo</h2>
           <p id="photoEditorStatus" class="mt-1 text-sm text-slate-400">Upload or drag a photo, then frame it.</p>
+          <button type="button" id="photoEditorDelete" class="mt-3 hidden w-full rounded-lg border border-red-500/40 px-4 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
         </div>
         <label class="grid gap-2 text-sm text-slate-300">
           Zoom
@@ -250,7 +251,6 @@
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
         <div class="mt-auto flex justify-end gap-3">
-          <button type="button" id="photoEditorDelete" class="mr-auto hidden rounded-lg border border-red-500/40 px-4 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
           <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
           <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
           <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Save photo</button>
@@ -616,9 +616,18 @@
       }
       if (mainGarmentPhoto) mainGarmentPhoto.src = `/file/nobg/${activePhotoName}`;
     };
+    const syncGalleryOrderFromThumbs = () => {
+      const orderedIds = [...document.querySelectorAll('[data-photo-thumb]')].map((item) => String(item.dataset.photoId));
+      galleryPhotos.sort((a, b) => orderedIds.indexOf(String(a.id)) - orderedIds.indexOf(String(b.id)));
+      selectGalleryPhoto(0);
+      return orderedIds;
+    };
     const openPhotoModal = async ({ existing = false, photoName = '', photoId = '' } = {}) => {
       if (photoIdInput) photoIdInput.value = photoId;
-      if (photoDelete) photoDelete.classList.toggle('hidden', !photoId);
+      if (photoDelete) {
+        photoDelete.classList.toggle('hidden', !photoId);
+        photoDelete.style.display = photoId ? 'block' : 'none';
+      }
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
       setPhotoStatus(existing ? 'Loading current photo...' : 'Upload or drag a photo, then frame it.');
@@ -711,13 +720,12 @@
         const dragged = list?.querySelector(`[data-photo-id="${CSS.escape(draggedId)}"]`);
         if (!list || !dragged) return;
         list.insertBefore(dragged, thumb);
-        const photoIds = [...list.querySelectorAll('[data-photo-thumb]')].map((item) => item.dataset.photoId);
+        const photoIds = syncGalleryOrderFromThumbs();
         await fetch('/wardrobe/{{garment.id}}/photos/reorder{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({ photoIds: photoIds.join(',') }),
         });
-        window.location.reload();
       });
     }
     document.querySelector('[data-gallery-prev]')?.addEventListener('click', (event) => {
