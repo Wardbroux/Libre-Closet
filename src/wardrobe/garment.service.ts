@@ -463,44 +463,108 @@ export class GarmentService {
     const value = this.normalizeText(input);
     if (!value) return undefined;
     if (value.toLowerCase() === 'footwear') return 'Shoes > Sneakers';
-    return value
+    const normalized = value
       .split('>')
       .map((part) => part.trim())
       .filter(Boolean)
       .join(' > ');
+    return this.normalizeCategoryAlias(normalized);
   }
 
   private categoryFilter(category?: string): FilterQuery<Garment> | undefined {
-    const value = category?.trim();
+    const value = this.normalizeCategory(category);
     if (!value || value === 'All') return undefined;
     if (value === 'Clothing') {
       return {
         $or: [
+          { category: { $like: 'Tops & t-shirts%' } },
+          { category: { $like: 'Dresses%' } },
+          { category: { $like: 'Jumpers & sweaters%' } },
+          { category: { $like: 'Trousers & leggings%' } },
+          { category: { $like: 'Skirts%' } },
+          { category: { $like: 'Jeans%' } },
+          { category: { $like: 'Shorts & cropped trousers%' } },
+          { category: { $like: 'Outerwear%' } },
+          { category: { $like: 'Activewear%' } },
+          { category: { $like: 'Swimwear%' } },
+          { category: { $like: 'Suits & blazers%' } },
+          { category: { $like: 'Lingerie & nightwear%' } },
+          { category: { $like: 'Jumpsuits & playsuits%' } },
+          { category: 'Maternity clothes' },
+          { category: 'Costumes & special outfits' },
+          { category: 'Other clothing' },
           { category: { $like: 'Tops%' } },
           { category: { $like: 'Hoodies & Sweaters%' } },
-          { category: { $like: 'Outerwear%' } },
           { category: { $like: 'Bottoms%' } },
-          { category: { $like: 'Dresses%' } },
           { category: { $like: 'Suits & Sets%' } },
         ],
       };
     }
-    if (value === 'Tops & T-shirts') {
-      return {
-        $or: [{ category: { $like: 'Tops%' } }],
-      };
-    }
-    if (value === 'Trousers') {
+    if (value === 'Tops & t-shirts') {
       return {
         $or: [
-          { category: { $like: 'Bottoms > Trousers%' } },
-          { category: { $like: 'Bottoms > Shorts%' } },
-          { category: { $like: 'Bottoms > Skirts%' } },
-          { category: { $like: 'Bottoms > Skorts%' } },
+          { category: { $like: 'Tops & t-shirts%' } },
+          { category: { $like: 'Tops%' } },
         ],
       };
     }
-    if (value === 'Jeans') return { category: { $like: 'Bottoms > Jeans%' } };
+    if (value === 'Trousers & leggings') {
+      return {
+        $or: [
+          { category: { $like: 'Trousers & leggings%' } },
+          { category: { $like: 'Bottoms > Trousers%' } },
+          { category: { $like: 'Bottoms > Cargo pants%' } },
+          { category: { $like: 'Bottoms > Chinos%' } },
+          { category: { $like: 'Bottoms > Joggers%' } },
+          { category: { $like: 'Bottoms > Leggings%' } },
+        ],
+      };
+    }
+    if (value === 'Shorts & cropped trousers') {
+      return {
+        $or: [
+          { category: { $like: 'Shorts & cropped trousers%' } },
+          { category: { $like: 'Bottoms > Shorts%' } },
+        ],
+      };
+    }
+    if (value === 'Skirts') {
+      return {
+        $or: [
+          { category: { $like: 'Skirts%' } },
+          { category: { $like: 'Bottoms > Skirts%' } },
+        ],
+      };
+    }
+    if (value === 'Skorts') {
+      return {
+        $or: [{ category: 'Skorts' }, { category: 'Bottoms > Skorts' }],
+      };
+    }
+    if (value === 'Jeans') {
+      return {
+        $or: [
+          { category: { $like: 'Jeans%' } },
+          { category: { $like: 'Bottoms > Jeans%' } },
+        ],
+      };
+    }
+    if (value === 'Jumpers & sweaters') {
+      return {
+        $or: [
+          { category: { $like: 'Jumpers & sweaters%' } },
+          { category: { $like: 'Hoodies & Sweaters%' } },
+        ],
+      };
+    }
+    if (value === 'Suits & blazers') {
+      return {
+        $or: [
+          { category: { $like: 'Suits & blazers%' } },
+          { category: { $like: 'Suits & Sets%' } },
+        ],
+      };
+    }
     if (value === 'Shoes') {
       return {
         $or: [{ category: { $like: 'Shoes%' } }, { category: 'footwear' }],
@@ -509,6 +573,32 @@ export class GarmentService {
     return {
       $or: [{ category: value }, { category: { $like: `${value} >%` } }],
     };
+  }
+
+  private normalizeCategoryAlias(category: string): string {
+    const aliases: Array<[string, string]> = [
+      ['Tops & T-shirts', 'Tops & t-shirts'],
+      ['Tops', 'Tops & t-shirts'],
+      ['Hoodies & Sweaters', 'Jumpers & sweaters'],
+      ['Bottoms > Jeans', 'Jeans'],
+      ['Bottoms > Shorts', 'Shorts & cropped trousers'],
+      ['Bottoms > Skirts', 'Skirts'],
+      ['Bottoms > Skorts', 'Skorts'],
+      ['Bottoms > Trousers', 'Trousers & leggings'],
+      ['Bottoms > Cargo pants', 'Trousers & leggings > Cargo trousers'],
+      ['Bottoms > Chinos', 'Trousers & leggings > Cropped trousers & chinos'],
+      ['Bottoms > Joggers', 'Trousers & leggings > Other trousers'],
+      ['Bottoms > Leggings', 'Trousers & leggings > Leggings'],
+      ['Suits & Sets', 'Suits & blazers'],
+    ];
+
+    for (const [from, to] of aliases) {
+      if (category === from) return to;
+      if (category.startsWith(`${from} >`)) {
+        return `${to}${category.slice(from.length)}`;
+      }
+    }
+    return category;
   }
 
   private normalizeTags(input?: string): string | undefined {

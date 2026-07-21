@@ -591,7 +591,9 @@ export class WardrobeController {
     query: SearchGarmentDto,
     viewOwner?: number,
   ) {
-    const active = query.category?.trim();
+    const active = query.category
+      ? this.canonicalCategory(query.category)
+      : undefined;
     const paths = this.categoryPaths(categories);
     const options = this.categoryOptions(paths, active, query, viewOwner);
     return {
@@ -626,12 +628,7 @@ export class WardrobeController {
       );
     }
 
-    const normalizedActive =
-      active === 'Tops & T-shirts'
-        ? 'Tops'
-        : active === 'Jeans'
-          ? 'Bottoms > Jeans'
-          : active;
+    const normalizedActive = active ? this.canonicalCategory(active) : active;
     const activeParts =
       normalizedActive === 'Clothing'
         ? []
@@ -654,15 +651,13 @@ export class WardrobeController {
       }
     }
 
-    return [...nextLabels]
-      .sort((a, b) => a.localeCompare(b))
-      .map((label) => {
-        const value =
-          normalizedActive === 'Clothing'
-            ? label
-            : [...activeParts, label].join(' > ');
-        return this.categoryOption(label, value, paths, query, viewOwner);
-      });
+    return [...nextLabels].map((label) => {
+      const value =
+        normalizedActive === 'Clothing'
+          ? label
+          : [...activeParts, label].join(' > ');
+      return this.categoryOption(label, value, paths, query, viewOwner);
+    });
   }
 
   private categoryOption(
@@ -691,12 +686,7 @@ export class WardrobeController {
     viewOwner?: number,
   ) {
     if (!category || category === 'All') return [];
-    const normalized =
-      category === 'Tops & T-shirts'
-        ? 'Tops'
-        : category === 'Jeans'
-          ? 'Bottoms > Jeans'
-          : category;
+    const normalized = this.canonicalCategory(category);
     const crumbs = [
       {
         label: 'All',
@@ -727,9 +717,12 @@ export class WardrobeController {
   }
 
   private categoryPaths(categories: string[]): string[] {
-    return [...new Set([...DEFAULT_CATEGORY_PATHS, ...categories])]
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b));
+    return [
+      ...new Set([
+        ...DEFAULT_CATEGORY_PATHS,
+        ...categories.map((category) => this.canonicalCategory(category)),
+      ]),
+    ].filter(Boolean);
   }
 
   private filterChips(query: SearchGarmentDto, viewOwner?: number) {
@@ -775,7 +768,8 @@ export class WardrobeController {
 
   private categoryLeafLabel(category: string): string {
     if (category === 'Clothing') return 'Clothing';
-    if (category === 'Tops & T-shirts') return 'Tops & T-shirts';
+    if (category === 'Tops & T-shirts') return 'Tops & t-shirts';
+    if (category === 'Tops & t-shirts') return 'Tops & t-shirts';
     if (category === 'Jeans') return 'Jeans';
     return (
       category
@@ -791,29 +785,62 @@ export class WardrobeController {
     tabCategory: string,
   ): boolean {
     const active = activeCategory || 'All';
-    if (active === tabCategory) return true;
+    const canonicalActive = this.canonicalCategory(active);
+    const canonicalTab = this.canonicalCategory(tabCategory);
+    if (canonicalActive === canonicalTab) return true;
     if (tabCategory === 'All') return active === 'All';
     if (tabCategory === 'Clothing') {
-      const topLevel = active.split('>')[0].trim();
+      const topLevel = canonicalActive.split('>')[0].trim();
       return !['All', 'Accessories', 'Bags', 'Other', 'Shoes'].includes(
         topLevel,
       );
     }
-    if (tabCategory === 'Tops & T-shirts') return active.startsWith('Tops');
-    if (tabCategory === 'Trousers') {
+    if (canonicalTab === 'Tops & t-shirts') {
+      return canonicalActive.startsWith('Tops & t-shirts');
+    }
+    if (canonicalTab === 'Trousers & leggings') {
       return (
-        active.startsWith('Bottoms > Trousers') ||
-        active.startsWith('Bottoms > Cargo pants') ||
-        active.startsWith('Bottoms > Chinos') ||
-        active.startsWith('Bottoms > Joggers') ||
-        active.startsWith('Bottoms > Leggings') ||
-        active.startsWith('Bottoms > Shorts') ||
-        active.startsWith('Bottoms > Skirts') ||
-        active.startsWith('Bottoms > Skorts')
+        canonicalActive.startsWith('Trousers & leggings') ||
+        canonicalActive.startsWith('Bottoms > Trousers') ||
+        canonicalActive.startsWith('Bottoms > Cargo pants') ||
+        canonicalActive.startsWith('Bottoms > Chinos') ||
+        canonicalActive.startsWith('Bottoms > Joggers') ||
+        canonicalActive.startsWith('Bottoms > Leggings')
       );
     }
-    if (tabCategory === 'Jeans') return active.startsWith('Bottoms > Jeans');
-    return active.startsWith(tabCategory);
+    if (canonicalTab === 'Jeans') return canonicalActive.startsWith('Jeans');
+    return canonicalActive.startsWith(canonicalTab);
+  }
+
+  private canonicalCategory(category: string): string {
+    const normalized = category
+      .split('>')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(' > ');
+    const aliases: Array<[string, string]> = [
+      ['Tops & T-shirts', 'Tops & t-shirts'],
+      ['Tops', 'Tops & t-shirts'],
+      ['Hoodies & Sweaters', 'Jumpers & sweaters'],
+      ['Bottoms > Jeans', 'Jeans'],
+      ['Bottoms > Shorts', 'Shorts & cropped trousers'],
+      ['Bottoms > Skirts', 'Skirts'],
+      ['Bottoms > Skorts', 'Skorts'],
+      ['Bottoms > Trousers', 'Trousers & leggings'],
+      ['Bottoms > Cargo pants', 'Trousers & leggings > Cargo trousers'],
+      ['Bottoms > Chinos', 'Trousers & leggings > Cropped trousers & chinos'],
+      ['Bottoms > Joggers', 'Trousers & leggings > Other trousers'],
+      ['Bottoms > Leggings', 'Trousers & leggings > Leggings'],
+      ['Suits & Sets', 'Suits & blazers'],
+    ];
+
+    for (const [from, to] of aliases) {
+      if (normalized === from) return to;
+      if (normalized.startsWith(`${from} >`)) {
+        return `${to}${normalized.slice(from.length)}`;
+      }
+    }
+    return normalized;
   }
 
   private sizeFilterGroups(query: SearchGarmentDto, viewOwner?: number) {
