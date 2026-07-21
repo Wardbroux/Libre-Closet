@@ -30,12 +30,14 @@
         class="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/50"
       >
         {{#unless garment}}
-        <div class="grid gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
-          <div class="text-slate-300">Photo</div>
-          <div class="justify-self-end">
-            <div id="newPhotoPreview" class="mb-3 hidden aspect-square w-32 rounded-lg border border-emerald-400 bg-slate-900 p-2">
+        <div class="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_160px]">
+          <div>
+            <div class="mb-3 text-slate-300">Photo</div>
+            <div id="newPhotoPreview" class="hidden aspect-square w-full max-w-xl overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
               <img id="newPhotoPreviewImg" alt="" class="h-full w-full object-contain" />
             </div>
+          </div>
+          <div class="flex flex-col items-start gap-3 lg:items-end lg:self-end">
             <button type="button" id="addPhotoButton" class="flex aspect-square w-32 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300 hover:border-emerald-400 hover:text-emerald-200">
               <span class="text-3xl leading-none">+</span>
               Add photo

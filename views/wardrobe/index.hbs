@@ -81,6 +81,13 @@
     {{/each}}
   </nav>
 
+  <div class="mb-5 flex justify-end">
+    <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-300">
+      <span class="whitespace-nowrap">Card size</span>
+      <input id="wardrobeCardScale" type="range" min="180" max="620" step="20" value="320" class="range range-xs w-40" />
+    </label>
+  </div>
+
   <form method="get" action="/wardrobe" id="filter-form" class="mb-5 flex flex-wrap items-start gap-3">
     {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
     <input type="hidden" name="keyword" value="{{search.keyword}}">
@@ -182,10 +189,6 @@
 
   <div class="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
     <span>{{garments.length}} {{t 'lang.RESULTS'}}</span>
-    <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-300">
-      <span class="whitespace-nowrap">Card size</span>
-      <input id="wardrobeCardScale" type="range" min="180" max="420" step="20" value="320" class="range range-xs w-36" />
-    </label>
   </div>
 
   {{#if garments.length}}
@@ -211,9 +214,6 @@
             {{#each (splitCsv this.tags)}}
             <span class="rounded-md border px-2.5 py-1 text-xs" style="{{tagStyle this}}">{{this}}</span>
             {{/each}}
-            {{#unless this.tags}}
-            <span class="rounded-md bg-slate-800 px-2.5 py-1 text-xs text-slate-400">{{this.category}}</span>
-            {{/unless}}
           </div>
           {{#if this.location}}
           <span class="shrink-0 rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-300">{{this.location}}</span>
@@ -239,7 +239,7 @@
       if (!slider || !grid) return;
       const stored = localStorage.getItem('wardrobeCardMin');
       const setSize = (value) => {
-        const size = Math.max(180, Math.min(420, Number(value) || 320));
+        const size = Math.max(180, Math.min(620, Number(value) || 320));
         slider.value = String(size);
         grid.style.setProperty('--wardrobe-card-min', `${size}px`);
         localStorage.setItem('wardrobeCardMin', String(size));
