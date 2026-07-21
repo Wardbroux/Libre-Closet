@@ -190,6 +190,29 @@ async function bootstrap() {
       .map((s) => s.trim())
       .filter(Boolean);
   });
+  hbs.registerHelper('colorDotStyle', function (value: string | undefined) {
+    const colors: Record<string, string> = {
+      red: '#ef4444',
+      pink: '#ec4899',
+      orange: '#f97316',
+      yellow: '#facc15',
+      green: '#22c55e',
+      blue: '#3b82f6',
+      purple: '#a855f7',
+      black: '#111827',
+      white: '#f8fafc',
+      grey: '#94a3b8',
+      beige: '#d6b98c',
+      brown: '#92400e',
+      gold: '#d4af37',
+      silver: '#cbd5e1',
+      pattern: 'linear-gradient(135deg, #22c55e 0 25%, #facc15 25% 50%, #3b82f6 50% 75%, #ec4899 75%)',
+      other: '#64748b',
+    };
+    const key = String(value ?? '').trim().toLowerCase();
+    const color = colors[key] ?? key;
+    return `background: ${color};`;
+  });
   hbs.registerHelper('tagStyle', function (value: string | number) {
     const styles = [
       'border-color: rgba(52, 211, 153, .4); background: rgba(16, 185, 129, .15); color: rgb(167, 243, 208);',

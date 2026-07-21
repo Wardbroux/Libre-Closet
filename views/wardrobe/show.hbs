@@ -25,13 +25,13 @@
         </figure>
 
         <div class="grid max-w-xl grid-cols-5 gap-3">
-          <div class="aspect-square rounded-lg border border-emerald-400 bg-slate-900 p-2">
+          <button type="button" data-photo-edit-open="{{#if garment.photo}}true{{/if}}" class="aspect-square rounded-lg border border-emerald-400 bg-slate-900 p-2 text-left disabled:pointer-events-none" {{#unless garment.photo}}disabled{{/unless}}>
             {{#if garment.photo}}
             <img src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain" />
             {{/if}}
-          </div>
+          </button>
           {{#if canEdit}}
-          <button type="button" class="edit-mode hidden flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300">
+          <button type="button" id="addPhotoButton" class="edit-mode hidden flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300 hover:border-emerald-400 hover:text-emerald-200">
             <span class="text-3xl leading-none">+</span>
             Add photo
           </button>
@@ -47,14 +47,11 @@
           hx-target="main"
           hx-select="main"
           hx-swap="outerHTML"
-          class="edit-mode hidden rounded-lg border border-slate-800 bg-slate-900/70 p-4"
+          class="hidden"
         >
-          <div class="flex flex-wrap items-center gap-3">
-            <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp" />
-            <input type="file" id="photoInput" name="photo" class="file-input file-input-bordered file-input-sm border-slate-700 bg-slate-950" accept="image/jpeg,image/png,image/gif,image/webp" />
-            <button id="photoBtn" class="btn btn-outline btn-sm border-slate-700" disabled>{{#if garment.photo}}Update photo{{else}}Add photo{{/if}}</button>
-            <span id="loading" class="htmx-indicator loading loading-ring loading-sm"></span>
-          </div>
+          <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp" />
+          <input type="file" id="photoInput" name="photo" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+          <button id="photoBtn" class="hidden" disabled>{{#if garment.photo}}Update photo{{else}}Add photo{{/if}}</button>
         </form>
         {{/if}}
       </div>
@@ -119,9 +116,25 @@
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Colour</div>
             <div class="view-mode flex flex-wrap justify-end gap-2">
-              {{#each (splitCsv garment.color)}}<span class="rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white">{{this}}</span>{{/each}}
+              {{#each (splitCsv garment.color)}}<span class="inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white"><span class="size-2.5 rounded-full border border-white/40" style="{{colorDotStyle this}}"></span>{{this}}</span>{{/each}}
             </div>
-            <input name="color" value="{{formatColors garment.color}}" placeholder="Green, White" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
+            <div class="edit-mode relative hidden w-full max-w-xs justify-self-end">
+              <input type="hidden" name="color" id="colorValueInput" value="{{formatColors garment.color}}" />
+              <button type="button" id="colorPickerButton" class="flex min-h-10 w-full items-center justify-between rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none hover:border-emerald-400">
+                <span id="colorPickerLabel" class="flex flex-wrap gap-2"></span>
+                <span class="text-slate-400">></span>
+              </button>
+              <div id="colorPickerPanel" class="absolute right-0 top-full z-40 mt-2 hidden w-full rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
+                <div class="max-h-72 overflow-y-auto">
+                  {{#each colors}}
+                  <button type="button" data-color="{{this}}" class="color-option flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200">
+                    <span class="inline-flex items-center gap-2"><span class="size-3 rounded-full border border-white/40" style="{{colorDotStyle this}}"></span>{{this}}</span>
+                    <span class="color-check text-emerald-300"></span>
+                  </button>
+                  {{/each}}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
@@ -189,6 +202,46 @@
     </section>
     {{/if}}
   </div>
+
+  {{#if canEdit}}
+  <div id="photoEditorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+    <div class="grid max-h-full w-full max-w-4xl gap-4 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 p-4 shadow-2xl shadow-black/50 lg:grid-cols-[1fr_260px]">
+      <div class="flex min-h-[360px] flex-col gap-3">
+        <div id="photoDropZone" class="relative flex min-h-[320px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-600 bg-slate-900/70">
+          <div id="photoDropHint" class="px-6 text-center text-slate-300">
+            <div class="text-lg font-semibold text-white">Drop photo here</div>
+            <div class="mt-2 text-sm text-slate-400">or click to upload</div>
+          </div>
+          <canvas id="photoEditorCanvas" class="hidden max-h-[68vh] max-w-full touch-none rounded-md"></canvas>
+        </div>
+        <input id="photoEditorFileInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+      </div>
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 class="text-xl font-semibold text-white">Photo</h2>
+          <p id="photoEditorStatus" class="mt-1 text-sm text-slate-400">Upload or drag a photo, then frame it.</p>
+        </div>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Zoom
+          <input id="photoZoomInput" type="range" min="1" max="3" step="0.01" value="1" class="range range-sm" />
+        </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Left / right
+          <input id="photoXInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
+        </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Up / down
+          <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
+        </label>
+        <div class="mt-auto flex justify-end gap-3">
+          <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
+          <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
+          <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Save photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{/if}}
 
   <script type="module">
     import { wireUpPhotoInput } from '/js/background-removal.js';
@@ -327,6 +380,84 @@
     syncCategoryLabel();
     syncSizeOptions();
 
+    const colorInput = document.getElementById('colorValueInput');
+    const colorButton = document.getElementById('colorPickerButton');
+    const colorLabel = document.getElementById('colorPickerLabel');
+    const colorPanel = document.getElementById('colorPickerPanel');
+    const selectedColors = new Set(
+      (colorInput?.value || '')
+        .split(',')
+        .map((color) => color.trim())
+        .filter(Boolean),
+    );
+    const colorStyles = {
+      red: '#ef4444',
+      pink: '#ec4899',
+      orange: '#f97316',
+      yellow: '#facc15',
+      green: '#22c55e',
+      blue: '#3b82f6',
+      purple: '#a855f7',
+      black: '#111827',
+      white: '#f8fafc',
+      grey: '#94a3b8',
+      beige: '#d6b98c',
+      brown: '#92400e',
+      gold: '#d4af37',
+      silver: '#cbd5e1',
+      pattern: 'linear-gradient(135deg, #22c55e 0 25%, #facc15 25% 50%, #3b82f6 50% 75%, #ec4899 75%)',
+      other: '#64748b',
+    };
+    const colorSwatch = (color) => {
+      const dot = document.createElement('span');
+      dot.className = 'size-2.5 rounded-full border border-white/40';
+      dot.style.background = colorStyles[color.toLowerCase()] || color;
+      return dot;
+    };
+    const syncColors = () => {
+      if (colorInput) colorInput.value = [...selectedColors].join(', ');
+      if (colorLabel) {
+        colorLabel.innerHTML = '';
+        if (!selectedColors.size) {
+          colorLabel.textContent = 'Select colours';
+        } else {
+          for (const color of selectedColors) {
+            const chip = document.createElement('span');
+            chip.className = 'inline-flex items-center gap-2 rounded-md border border-slate-600 bg-slate-800 px-2 py-0.5 text-sm';
+            chip.append(colorSwatch(color), document.createTextNode(color));
+            colorLabel.appendChild(chip);
+          }
+        }
+      }
+      for (const option of document.querySelectorAll('.color-option')) {
+        const selected = selectedColors.has(option.dataset.color);
+        option.classList.toggle('bg-emerald-500/15', selected);
+        option.querySelector('.color-check').textContent = selected ? 'selected' : '';
+      }
+    };
+    colorButton?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      colorPanel?.classList.toggle('hidden');
+    });
+    colorPanel?.addEventListener('click', (event) => {
+      const option = event.target.closest('.color-option');
+      if (!option) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const color = option.dataset.color;
+      if (selectedColors.has(color)) selectedColors.delete(color);
+      else selectedColors.add(color);
+      syncColors();
+    });
+    document.addEventListener('click', (event) => {
+      if (!colorPanel || colorPanel.classList.contains('hidden')) return;
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest('#colorPickerButton') || event.target.closest('#colorPickerPanel')) return;
+      colorPanel.classList.add('hidden');
+    });
+    syncColors();
+
     const tagInput = document.getElementById('tagValueInput');
     const tagPicker = document.getElementById('tagChipPicker');
     const newTagInput = document.getElementById('newTagInput');
@@ -379,6 +510,167 @@
       addTag(newTagInput.value);
     });
     syncTags();
+
+    const photoModal = document.getElementById('photoEditorModal');
+    const photoDropZone = document.getElementById('photoDropZone');
+    const photoDropHint = document.getElementById('photoDropHint');
+    const photoCanvas = document.getElementById('photoEditorCanvas');
+    const photoFileInput = document.getElementById('photoEditorFileInput');
+    const photoChoose = document.getElementById('photoEditorChoose');
+    const photoSave = document.getElementById('photoEditorSave');
+    const photoCancel = document.getElementById('photoEditorCancel');
+    const photoStatus = document.getElementById('photoEditorStatus');
+    const zoomInput = document.getElementById('photoZoomInput');
+    const xInput = document.getElementById('photoXInput');
+    const yInput = document.getElementById('photoYInput');
+    const uploadInput = document.getElementById('photoInput');
+    const uploadForm = document.getElementById('photoUploadForm');
+    const existingPhotoName = '{{#if garment.photo}}{{garment.photo.fileName}}{{/if}}';
+    let photoImage = null;
+    let photoObjectUrl = '';
+    let photoDragging = false;
+    let lastPointer = null;
+
+    const setPhotoStatus = (text) => {
+      if (photoStatus) photoStatus.textContent = text;
+    };
+    const resetPhotoControls = () => {
+      if (zoomInput) zoomInput.value = '1';
+      if (xInput) xInput.value = '0';
+      if (yInput) yInput.value = '0';
+    };
+    const drawPhotoPreview = () => {
+      if (!photoCanvas || !photoImage) return;
+      const size = 900;
+      photoCanvas.width = size;
+      photoCanvas.height = size;
+      const ctx = photoCanvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, size, size);
+      const zoom = parseFloat(zoomInput?.value || '1');
+      const baseScale = Math.min(size / photoImage.naturalWidth, size / photoImage.naturalHeight);
+      const scale = baseScale * zoom;
+      const width = photoImage.naturalWidth * scale;
+      const height = photoImage.naturalHeight * scale;
+      const x = (size - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * size * 0.4;
+      const y = (size - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * size * 0.4;
+      ctx.drawImage(photoImage, x, y, width, height);
+    };
+    const loadPhotoBlob = async (blob) => {
+      if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+      photoObjectUrl = URL.createObjectURL(blob);
+      photoImage = new Image();
+      await new Promise((resolve, reject) => {
+        photoImage.onload = resolve;
+        photoImage.onerror = reject;
+        photoImage.src = photoObjectUrl;
+      });
+      resetPhotoControls();
+      photoDropHint?.classList.add('hidden');
+      photoCanvas?.classList.remove('hidden');
+      if (photoSave) photoSave.disabled = false;
+      setPhotoStatus('Frame the photo, then save it.');
+      drawPhotoPreview();
+    };
+    const openPhotoModal = async ({ existing = false } = {}) => {
+      photoModal?.classList.remove('hidden');
+      photoModal?.classList.add('flex');
+      setPhotoStatus(existing ? 'Loading current photo...' : 'Upload or drag a photo, then frame it.');
+      if (existing && existingPhotoName) {
+        const response = await fetch(`/file/${existingPhotoName}`);
+        await loadPhotoBlob(await response.blob());
+      }
+    };
+    const closePhotoModal = () => {
+      photoModal?.classList.add('hidden');
+      photoModal?.classList.remove('flex');
+    };
+    const exportPhotoFile = async () => {
+      if (!photoImage) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1400;
+      canvas.height = 1400;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const zoom = parseFloat(zoomInput?.value || '1');
+      const baseScale = Math.min(canvas.width / photoImage.naturalWidth, canvas.height / photoImage.naturalHeight);
+      const scale = baseScale * zoom;
+      const width = photoImage.naturalWidth * scale;
+      const height = photoImage.naturalHeight * scale;
+      const x = (canvas.width - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * canvas.width * 0.4;
+      const y = (canvas.height - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * canvas.height * 0.4;
+      ctx.drawImage(photoImage, x, y, width, height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
+      return new File([blob], 'garment-photo.png', { type: 'image/png' });
+    };
+    const waitForPhotoProcessing = () =>
+      new Promise((resolve) => {
+        uploadInput?.addEventListener('photo-processing-complete', resolve, { once: true });
+      });
+    const submitEditedPhoto = async () => {
+      const file = await exportPhotoFile();
+      if (!file || !uploadInput || !uploadForm) return;
+      setPhotoStatus('Preparing background removal...');
+      if (photoSave) photoSave.disabled = true;
+      uploadInput.dataset.skipMaskEditor = 'true';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      uploadInput.files = dt.files;
+      const processing = waitForPhotoProcessing();
+      uploadInput.dispatchEvent(new Event('change'));
+      await processing;
+      setPhotoStatus('Uploading photo...');
+      closePhotoModal();
+      uploadForm.requestSubmit();
+    };
+
+    document.getElementById('addPhotoButton')?.addEventListener('click', () => openPhotoModal());
+    document.querySelector('[data-photo-edit-open="true"]')?.addEventListener('click', () => {
+      if (!document.getElementById('editItemToggle')?.textContent?.includes('Editing')) return;
+      openPhotoModal({ existing: true });
+    });
+    photoChoose?.addEventListener('click', () => photoFileInput?.click());
+    photoDropZone?.addEventListener('click', () => photoFileInput?.click());
+    photoCancel?.addEventListener('click', closePhotoModal);
+    photoSave?.addEventListener('click', submitEditedPhoto);
+    photoFileInput?.addEventListener('change', async () => {
+      const file = photoFileInput.files?.[0];
+      if (file) await loadPhotoBlob(file);
+    });
+    for (const input of [zoomInput, xInput, yInput]) {
+      input?.addEventListener('input', drawPhotoPreview);
+    }
+    photoDropZone?.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      photoDropZone.classList.add('border-emerald-400');
+    });
+    photoDropZone?.addEventListener('dragleave', () => photoDropZone.classList.remove('border-emerald-400'));
+    photoDropZone?.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      photoDropZone.classList.remove('border-emerald-400');
+      const file = event.dataTransfer?.files?.[0];
+      if (file) await loadPhotoBlob(file);
+    });
+    photoCanvas?.addEventListener('pointerdown', (event) => {
+      photoDragging = true;
+      lastPointer = { x: event.clientX, y: event.clientY };
+      photoCanvas.setPointerCapture(event.pointerId);
+    });
+    photoCanvas?.addEventListener('pointermove', (event) => {
+      if (!photoDragging || !lastPointer || !xInput || !yInput) return;
+      const dx = event.clientX - lastPointer.x;
+      const dy = event.clientY - lastPointer.y;
+      xInput.value = String(Math.max(-100, Math.min(100, parseFloat(xInput.value) + dx / 3)));
+      yInput.value = String(Math.max(-100, Math.min(100, parseFloat(yInput.value) + dy / 3)));
+      lastPointer = { x: event.clientX, y: event.clientY };
+      drawPhotoPreview();
+    });
+    photoCanvas?.addEventListener('pointerup', () => {
+      photoDragging = false;
+      lastPointer = null;
+    });
     wireUpPhotoInput();
   </script>
 </main>

@@ -116,6 +116,7 @@ export const wireUpPhotoInput = async () => {
 
     if (!isBgRemovalEnabled()) {
       if (submitBtn) submitBtn.disabled = false;
+      photoInput.dispatchEvent(new CustomEvent('photo-processing-complete'));
       return;
     }
 
@@ -162,7 +163,10 @@ export const wireUpPhotoInput = async () => {
     try {
       console.log(config);
       const rawBlob = await removeBackground(squareFile, config);
-      const blob = await openMaskEditor(squareFile, rawBlob);
+      const blob =
+        photoInput.dataset.skipMaskEditor === 'true'
+          ? rawBlob
+          : await openMaskEditor(squareFile, rawBlob);
 
       const dt = new DataTransfer();
       dt.items.add(new File([blob], 'nobg.webp', { type: 'image/webp' }));
@@ -180,6 +184,7 @@ export const wireUpPhotoInput = async () => {
       activeProgressHandler = null;
       if (bgStatus) bgStatus.classList.add('hidden');
       if (submitBtn) submitBtn.disabled = false;
+      photoInput.dispatchEvent(new CustomEvent('photo-processing-complete'));
     }
   });
 

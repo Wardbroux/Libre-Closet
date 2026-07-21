@@ -318,6 +318,7 @@ export class WardrobeController {
       categoryTree: this.editCategoryTree(filters.categories),
       availableLocations: filters.locations,
       availableTags: filters.tags,
+      colors: Object.values(GarmentColor),
       sizeGroups: this.editSizeGroups(),
     };
   }
