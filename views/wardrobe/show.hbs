@@ -80,7 +80,7 @@
 
       <div class="flex flex-col gap-5">
         <div>
-          <div class="mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
+          <div class="view-mode mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
             {{categoryLabel}}
           </div>
           <h1 class="view-mode text-3xl font-bold tracking-normal text-white">
@@ -97,13 +97,13 @@
           <div class="edit-mode hidden grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Name</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.name}}{{garment.name}}{{else}}Untitled item{{/if}}</div>
-            <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
+            <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
           <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.location}}true{{/if}}">
             <div class="text-slate-300">Location</div>
             <div class="view-mode justify-self-end rounded-lg border border-emerald-500/25 bg-emerald-500/15 px-4 py-2 font-medium text-emerald-200">{{#if garment.location}}{{garment.location}}{{else}}Unassigned{{/if}}</div>
-            <select name="location" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
+            <select name="location" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none focus:border-emerald-400">
               <option value="">Unassigned</option>
               {{#each availableLocations}}
               <option value="{{this}}" {{#ifEquals this ../garment.location}}selected{{/ifEquals}}>{{this}}</option>
@@ -132,7 +132,7 @@
           <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.brand}}true{{/if}}">
             <div class="text-slate-300">Brand</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.brand}}{{garment.brand}}{{else}}-{{/if}}</div>
-            <input name="brand" value="{{garment.brand}}" placeholder="Puma" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
+            <input name="brand" value="{{garment.brand}}" placeholder="Puma" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
           <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.color}}true{{/if}}">
@@ -162,7 +162,7 @@
           <div class="optional-detail-row grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.size}}true{{/if}}">
             <div class="text-slate-300">Size</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.size}}{{garment.size}}{{else}}-{{/if}}</div>
-            <select name="size" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
+            <select name="size" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none focus:border-emerald-400">
               <option value="">Select size</option>
               {{#each sizeGroups}}
               <optgroup label="{{this.label}}" data-size-kind="{{this.kind}}">
@@ -199,7 +199,7 @@
           <div class="optional-detail-row grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]" data-has-value="{{#if garment.notes}}true{{/if}}">
             <div class="text-slate-300">Notes</div>
             <p class="view-mode justify-self-end rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3 text-slate-200">{{#if garment.notes}}{{garment.notes}}{{else}}-{{/if}}</p>
-            <textarea name="notes" rows="2" placeholder="Comfortable everyday sneakers." class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right text-white outline-none focus:border-emerald-400">{{garment.notes}}</textarea>
+            <textarea name="notes" rows="2" placeholder="Comfortable everyday sneakers." class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left text-white outline-none focus:border-emerald-400">{{garment.notes}}</textarea>
           </div>
 
           <div class="edit-mode hidden flex justify-end gap-3 px-4 py-4">
@@ -266,7 +266,8 @@
         el.classList.toggle('hidden', !editing && el.dataset.hasValue !== 'true');
       }
       const toggle = document.getElementById('editItemToggle');
-      if (toggle) toggle.textContent = editing ? 'Editing' : 'Edit item';
+      if (toggle) toggle.classList.toggle('hidden', editing);
+      document.body.dataset.itemEditing = editing ? 'true' : 'false';
     };
 
     document.getElementById('editItemToggle')?.addEventListener('click', () => setEditing(true));
@@ -641,7 +642,7 @@
 
     document.getElementById('addPhotoButton')?.addEventListener('click', () => openPhotoModal());
     document.querySelector('[data-photo-edit-open="true"]')?.addEventListener('click', () => {
-      if (!document.getElementById('editItemToggle')?.textContent?.includes('Editing')) return;
+      if (document.body.dataset.itemEditing !== 'true') return;
       openPhotoModal({ existing: true });
     });
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
