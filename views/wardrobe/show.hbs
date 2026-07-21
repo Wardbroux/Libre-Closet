@@ -72,7 +72,7 @@
           action="/wardrobe/{{garment.id}}{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}"
           class="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/50"
         >
-          <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="edit-mode hidden grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Name</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.name}}{{garment.name}}{{else}}Untitled item{{/if}}</div>
             <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
