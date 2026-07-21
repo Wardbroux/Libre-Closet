@@ -90,7 +90,7 @@
 
     <details class="dropdown">
       <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">
-        {{#if search.category}}{{search.category}}{{else}}Category{{/if}}
+        {{categoryPanel.title}}
       </summary>
       <div class="dropdown-content z-30 mt-2 w-80 rounded-lg border border-slate-800 bg-slate-950 p-3 shadow-xl">
         {{#if categoryPanel.breadcrumbs.length}}
@@ -173,7 +173,7 @@
   {{/if}}
 
   {{#if categoryShortcuts.length}}
-  <nav class="mb-8 grid gap-x-10 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  <nav class="mb-8 flex max-w-3xl flex-wrap gap-x-8 gap-y-3 text-sm">
     {{#each categoryShortcuts}}
     <a href="{{this.href}}" class="text-emerald-400 hover:text-emerald-300">{{this.label}}</a>
     {{/each}}

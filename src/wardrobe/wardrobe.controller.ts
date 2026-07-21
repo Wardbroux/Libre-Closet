@@ -112,7 +112,7 @@ export class WardrobeController {
       activeCategory: query.category || 'All',
       categoryTabs: TOP_LEVEL_CATEGORIES.map((category) => ({
         label: category,
-        active: (query.category || 'All') === category,
+        active: this.categoryTabActive(query.category, category),
         href: this.wardrobeUrl(
           query,
           {
@@ -595,7 +595,7 @@ export class WardrobeController {
     const paths = this.categoryPaths(categories);
     const options = this.categoryOptions(paths, active, query, viewOwner);
     return {
-      title: active || 'Category',
+      title: active ? this.categoryLeafLabel(active) : 'Category',
       active: active ?? '',
       breadcrumbs: this.categoryBreadcrumbs(active, query, viewOwner),
       options,
@@ -652,23 +652,6 @@ export class WardrobeController {
       if (matches && parts.length > activeParts.length) {
         nextLabels.add(parts[activeParts.length]);
       }
-    }
-
-    if (!nextLabels.size && activeParts.length > 1) {
-      const parent = activeParts.slice(0, -1);
-      for (const path of paths) {
-        const parts = path.split('>').map((part) => part.trim());
-        const matches = parent.every((part, index) => parts[index] === part);
-        if (matches && parts.length > parent.length) {
-          nextLabels.add(parts[parent.length]);
-        }
-      }
-      return [...nextLabels]
-        .sort((a, b) => a.localeCompare(b))
-        .map((label) => {
-          const value = [...parent, label].join(' > ');
-          return this.categoryOption(label, value, paths, query, viewOwner);
-        });
     }
 
     return [...nextLabels]
@@ -759,7 +742,7 @@ export class WardrobeController {
     }
     if (query.category) {
       chips.push({
-        label: query.category,
+        label: this.categoryLeafLabel(query.category),
         href: this.wardrobeUrl(query, { category: undefined }, viewOwner),
       });
     }
@@ -788,6 +771,49 @@ export class WardrobeController {
       });
     }
     return chips;
+  }
+
+  private categoryLeafLabel(category: string): string {
+    if (category === 'Clothing') return 'Clothing';
+    if (category === 'Tops & T-shirts') return 'Tops & T-shirts';
+    if (category === 'Jeans') return 'Jeans';
+    return (
+      category
+        .split('>')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .at(-1) ?? category
+    );
+  }
+
+  private categoryTabActive(
+    activeCategory: string | undefined,
+    tabCategory: string,
+  ): boolean {
+    const active = activeCategory || 'All';
+    if (active === tabCategory) return true;
+    if (tabCategory === 'All') return active === 'All';
+    if (tabCategory === 'Clothing') {
+      const topLevel = active.split('>')[0].trim();
+      return !['All', 'Accessories', 'Bags', 'Other', 'Shoes'].includes(
+        topLevel,
+      );
+    }
+    if (tabCategory === 'Tops & T-shirts') return active.startsWith('Tops');
+    if (tabCategory === 'Trousers') {
+      return (
+        active.startsWith('Bottoms > Trousers') ||
+        active.startsWith('Bottoms > Cargo pants') ||
+        active.startsWith('Bottoms > Chinos') ||
+        active.startsWith('Bottoms > Joggers') ||
+        active.startsWith('Bottoms > Leggings') ||
+        active.startsWith('Bottoms > Shorts') ||
+        active.startsWith('Bottoms > Skirts') ||
+        active.startsWith('Bottoms > Skorts')
+      );
+    }
+    if (tabCategory === 'Jeans') return active.startsWith('Bottoms > Jeans');
+    return active.startsWith(tabCategory);
   }
 
   private sizeFilterGroups(query: SearchGarmentDto, viewOwner?: number) {

@@ -481,6 +481,7 @@ export class GarmentService {
           { category: { $like: 'Outerwear%' } },
           { category: { $like: 'Bottoms%' } },
           { category: { $like: 'Dresses%' } },
+          { category: { $like: 'Suits & Sets%' } },
         ],
       };
     }
