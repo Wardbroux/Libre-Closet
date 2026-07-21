@@ -40,18 +40,18 @@
       <div class="flex flex-col gap-4">
         <figure class="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
           {{#if garment.photo}}
-          <img src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain p-6" />
+          <img id="mainGarmentPhoto" src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain p-6" />
           {{else}}
           <div class="flex h-full w-full items-center justify-center text-slate-500">No photo</div>
           {{/if}}
         </figure>
 
         <div class="grid max-w-xl grid-cols-5 gap-3">
-          <button type="button" data-photo-edit-open="{{#if garment.photo}}true{{/if}}" class="aspect-square rounded-lg border border-emerald-400 bg-slate-900 p-2 text-left disabled:pointer-events-none" {{#unless garment.photo}}disabled{{/unless}}>
-            {{#if garment.photo}}
-            <img src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain" />
-            {{/if}}
+          {{#each galleryPhotos}}
+          <button type="button" data-photo-thumb data-photo-id="{{this.id}}" data-photo-name="{{this.fileName}}" class="aspect-square rounded-lg border border-slate-700 bg-slate-900 p-2 text-left hover:border-emerald-400 data-[active=true]:border-emerald-400" {{#if @first}}data-active="true"{{/if}}>
+            <img src="/file/nobg/{{this.fileName}}" alt="{{../garment.name}}" class="h-full w-full object-contain" />
           </button>
+          {{/each}}
           {{#if canEdit}}
           <button type="button" id="addPhotoButton" class="edit-mode hidden flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300 hover:border-emerald-400 hover:text-emerald-200">
             <span class="text-3xl leading-none">+</span>
@@ -73,6 +73,7 @@
         >
           <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp" />
           <input type="file" id="photoInput" name="photo" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+          <input type="hidden" id="photoIdInput" name="photoId" value="" />
           <button id="photoBtn" class="hidden" disabled>{{#if garment.photo}}Update photo{{else}}Add photo{{/if}}</button>
         </form>
         {{/if}}
@@ -542,8 +543,11 @@
     const xInput = document.getElementById('photoXInput');
     const yInput = document.getElementById('photoYInput');
     const uploadInput = document.getElementById('photoInput');
+    const photoIdInput = document.getElementById('photoIdInput');
     const uploadForm = document.getElementById('photoUploadForm');
-    const existingPhotoName = '{{#if garment.photo}}{{garment.photo.fileName}}{{/if}}';
+    const mainGarmentPhoto = document.getElementById('mainGarmentPhoto');
+    let activePhotoName = '{{#if garment.photo}}{{garment.photo.fileName}}{{/if}}';
+    let activePhotoId = '';
     let photoImage = null;
     let photoObjectUrl = '';
     let photoDragging = false;
@@ -591,12 +595,13 @@
       setPhotoStatus('Frame the photo, then save it.');
       drawPhotoPreview();
     };
-    const openPhotoModal = async ({ existing = false } = {}) => {
+    const openPhotoModal = async ({ existing = false, photoName = '', photoId = '' } = {}) => {
+      if (photoIdInput) photoIdInput.value = photoId;
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
       setPhotoStatus(existing ? 'Loading current photo...' : 'Upload or drag a photo, then frame it.');
-      if (existing && existingPhotoName) {
-        const response = await fetch(`/file/${existingPhotoName}`);
+      if (existing && photoName) {
+        const response = await fetch(`/file/${photoName}`);
         await loadPhotoBlob(await response.blob());
       }
     };
@@ -644,10 +649,29 @@
       uploadForm.requestSubmit();
     };
 
-    document.getElementById('addPhotoButton')?.addEventListener('click', () => openPhotoModal());
+    document.getElementById('addPhotoButton')?.addEventListener('click', () => {
+      activePhotoId = '';
+      openPhotoModal();
+    });
+    for (const thumb of document.querySelectorAll('[data-photo-thumb]')) {
+      thumb.addEventListener('click', () => {
+        const photoName = thumb.dataset.photoName || '';
+        const photoId = thumb.dataset.photoId || '';
+        activePhotoName = photoName;
+        activePhotoId = photoId;
+        for (const other of document.querySelectorAll('[data-photo-thumb]')) {
+          other.dataset.active = String(other === thumb);
+        }
+        if (mainGarmentPhoto && photoName) {
+          mainGarmentPhoto.src = `/file/nobg/${photoName}`;
+        }
+        if (document.body.dataset.itemEditing !== 'true') return;
+        openPhotoModal({ existing: true, photoName, photoId });
+      });
+    }
     document.querySelector('[data-photo-edit-open="true"]')?.addEventListener('click', () => {
       if (document.body.dataset.itemEditing !== 'true') return;
-      openPhotoModal({ existing: true });
+      openPhotoModal({ existing: true, photoName: activePhotoName, photoId: activePhotoId });
     });
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
     photoDropZone?.addEventListener('click', (event) => {

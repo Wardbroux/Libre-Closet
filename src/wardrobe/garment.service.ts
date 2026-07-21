@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { I18nContext } from 'nestjs-i18n';
 import { Garment } from '../dal/entity/garment.entity';
+import { GarmentPhoto } from '../dal/entity/garment-photo.entity';
 import { File } from '../dal/entity/file.entity';
 import { User } from '../dal/entity/user.entity';
 import { WardrobeLocation } from '../dal/entity/wardrobe-location.entity';
@@ -43,6 +44,8 @@ export class GarmentService {
   constructor(
     @InjectRepository(Garment)
     private readonly garmentRepository: EntityRepository<Garment>,
+    @InjectRepository(GarmentPhoto)
+    private readonly garmentPhotoRepository: EntityRepository<GarmentPhoto>,
     @InjectRepository(User)
     private readonly userRepository: EntityRepository<User>,
     @InjectRepository(WardrobeLocation)
@@ -91,18 +94,27 @@ export class GarmentService {
       if (viewOwner != null && viewOwner !== userId) {
         return this.garmentRepository.find(
           { owner: { id: viewOwner }, ...searchConditions },
-          { populate: ['photo'], orderBy: { id: 'DESC' } },
+          {
+            populate: ['photo', 'photos', 'photos.file'],
+            orderBy: { id: 'DESC' },
+          },
         );
       }
       return this.garmentRepository.find(
         { owner: { id: userId }, ...searchConditions },
-        { populate: ['photo'], orderBy: { id: 'DESC' } },
+        {
+          populate: ['photo', 'photos', 'photos.file'],
+          orderBy: { id: 'DESC' },
+        },
       );
     }
     // AUTH_ENABLED=false: only return garments that belong to no user
     return this.garmentRepository.find(
       { owner: null, ...searchConditions },
-      { populate: ['photo'], orderBy: { id: 'DESC' } },
+      {
+        populate: ['photo', 'photos', 'photos.file'],
+        orderBy: { id: 'DESC' },
+      },
     );
   }
 
@@ -112,7 +124,7 @@ export class GarmentService {
     viewOwner?: number,
   ): Promise<Garment> {
     const garment = await this.garmentRepository.findOne(id, {
-      populate: ['photo', 'outfits'],
+      populate: ['photo', 'photos', 'photos.file', 'outfits'],
     });
     if (!garment) throw new NotFoundException('Garment not found');
     if (userId != null) {
@@ -132,43 +144,16 @@ export class GarmentService {
   async findOneByShareableId(shareableId: string): Promise<Garment> {
     const garment = await this.garmentRepository.findOne(
       { shareableId },
-      { populate: ['photo'] },
+      { populate: ['photo', 'photos', 'photos.file'] },
     );
     if (!garment) throw new NotFoundException('Garment not found');
     return garment;
   }
 
   async create(dto: CreateGarmentDto, userId?: number): Promise<Garment> {
-    let photo: File | undefined = undefined;
-    if (dto.files) {
-      let photoPromise: Promise<File> | undefined;
-      let nobgPromise: Promise<void> | undefined;
-      const photoFileName = `${randomUUID()}.webp`;
-
-      for await (const file of dto.files) {
-        if (file.fieldname === 'photo') {
-          photoPromise = this.fileService.storeImageFromFileUpload(
-            file,
-            userId,
-            photoFileName,
-          );
-        } else if (file.fieldname === 'nobgPhoto') {
-          nobgPromise = this.fileService.storeNobgVariantFromStream(
-            file.file,
-            photoFileName,
-          );
-        } else {
-          file.file.resume();
-        }
-      }
-
-      if (photoPromise) {
-        [photo] = await Promise.all([
-          photoPromise,
-          nobgPromise ?? Promise.resolve(),
-        ]);
-      }
-    }
+    const photo = dto.files
+      ? await this.storeUploadedPhoto(dto.files, userId)
+      : undefined;
 
     const garment = this.garmentRepository.create({
       name: dto.name,
@@ -190,6 +175,7 @@ export class GarmentService {
     }
 
     await this.garmentRepository.getEntityManager().persistAndFlush(garment);
+    if (photo) await this.addGarmentPhoto(garment, photo, true);
     return garment;
   }
 
@@ -208,7 +194,7 @@ export class GarmentService {
     userId?: number,
   ): Promise<Garment> {
     const source = await this.garmentRepository.findOne(sourceId, {
-      populate: ['photo'],
+      populate: ['photo', 'photos', 'photos.file'],
     });
     if (!source) throw new NotFoundException('Garment not found');
 
@@ -248,6 +234,7 @@ export class GarmentService {
     }
 
     await this.garmentRepository.getEntityManager().persistAndFlush(garment);
+    if (photo) await this.addGarmentPhoto(garment, photo, true);
     return garment;
   }
 
@@ -406,17 +393,106 @@ export class GarmentService {
     return garment;
   }
 
+  async uploadGalleryPhoto(
+    id: number,
+    files: AsyncIterableIterator<MultipartFile>,
+    photoId?: number,
+    userId?: number,
+    requestingUserId?: number,
+  ): Promise<void> {
+    const photo = await this.storeUploadedPhoto(files, userId);
+    if (!photo) return;
+    const garment = await this.findOne(id, requestingUserId, userId);
+    if (photoId) {
+      await this.replaceGarmentPhoto(garment, photoId, photo);
+      return;
+    }
+    await this.addGarmentPhoto(garment, photo, !garment.photo);
+  }
+
+  private async storeUploadedPhoto(
+    files: AsyncIterableIterator<MultipartFile>,
+    userId?: number,
+  ): Promise<File | undefined> {
+    let photoPromise: Promise<File> | undefined;
+    let nobgPromise: Promise<void> | undefined;
+    const photoFileName = `${randomUUID()}.webp`;
+
+    for await (const file of files) {
+      if (file.fieldname === 'photo') {
+        photoPromise = this.fileService.storeImageFromFileUpload(
+          file,
+          userId,
+          photoFileName,
+        );
+      } else if (file.fieldname === 'nobgPhoto') {
+        nobgPromise = this.fileService.storeNobgVariantFromStream(
+          file.file,
+          photoFileName,
+        );
+      } else {
+        file.file.resume();
+      }
+    }
+
+    if (!photoPromise) return undefined;
+    const [photo] = await Promise.all([
+      photoPromise,
+      nobgPromise ?? Promise.resolve(),
+    ]);
+    return photo;
+  }
+
+  private async addGarmentPhoto(
+    garment: Garment,
+    photo: File,
+    makeMain = false,
+  ): Promise<void> {
+    await garment.photos.init();
+    const galleryPhoto = this.garmentPhotoRepository.create({
+      garment,
+      file: photo,
+      position: garment.photos.length,
+      createdOn: new Date().toISOString(),
+    });
+    if (makeMain) garment.photo = photo as any;
+    await this.garmentRepository
+      .getEntityManager()
+      .persistAndFlush(galleryPhoto);
+  }
+
+  private async replaceGarmentPhoto(
+    garment: Garment,
+    photoId: number,
+    photo: File,
+  ): Promise<void> {
+    await garment.photos.init();
+    const galleryPhoto = garment.photos
+      .getItems()
+      .find((item) => item.id === photoId);
+    if (!galleryPhoto) throw new NotFoundException('Photo not found');
+    const oldFile = (galleryPhoto.file as any).unwrap?.() ?? galleryPhoto.file;
+    const oldFileName = oldFile?.fileName;
+    const replacingMain = garment.photo?.id === oldFile?.id;
+    galleryPhoto.file = photo as any;
+    if (replacingMain || galleryPhoto.position === 0) garment.photo = photo as any;
+    await this.garmentRepository.getEntityManager().flush();
+    if (oldFileName) await this.deletePhotoFiles(oldFileName);
+  }
+
   private async deleteOldPhoto(garment: Garment) {
     const oldFileName = garment.photo?.fileName;
     if (oldFileName) {
-      await this.fileService
-        .delete(oldFileName)
-        .catch((err) => this.logger.warn(err));
-      const nobgFileName = this.fileService.nobgFileName(oldFileName);
-      await this.fileService
-        .delete(nobgFileName)
-        .catch((err) => this.logger.warn(err));
+      await this.deletePhotoFiles(oldFileName);
     }
+  }
+
+  private async deletePhotoFiles(fileName: string): Promise<void> {
+    await this.fileService.delete(fileName).catch((err) => this.logger.warn(err));
+    const nobgFileName = this.fileService.nobgFileName(fileName);
+    await this.fileService
+      .delete(nobgFileName)
+      .catch((err) => this.logger.warn(err));
   }
 
   async updateNobg(

@@ -360,6 +360,12 @@ export class WardrobeController {
 
     return {
       garment,
+      galleryPhotos: garment.photos
+        .getItems()
+        .map((photo) => {
+          const file = (photo.file as any).unwrap?.() ?? photo.file;
+          return { id: photo.id, fileName: file.fileName };
+        }),
       categoryLabel: this.garmentService.resolveCategoryLabel(
         garment.category,
         i18n,
@@ -563,9 +569,20 @@ export class WardrobeController {
       if (!canManage) throw new ForbiddenException();
     }
 
-    await this.garmentService.update(
+    const fields: Record<string, string> = {};
+    const files = (async function* () {
+      for await (const part of (req as any).parts({ limits: { files: 2 } })) {
+        if (part.type === 'file') {
+          yield part;
+        } else {
+          fields[part.fieldname] = String(part.value ?? '');
+        }
+      }
+    })();
+    await this.garmentService.uploadGalleryPhoto(
       id,
-      { files: req.files({ limits: { files: 2 } }) },
+      files,
+      fields.photoId ? parseInt(fields.photoId, 10) : undefined,
       viewOwner ?? userId,
       userId,
     );

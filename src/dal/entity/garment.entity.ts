@@ -4,12 +4,14 @@ import {
   Enum,
   ManyToMany,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryKey,
   Property,
   type Ref,
 } from '@mikro-orm/core';
 import { File } from './file.entity';
+import { GarmentPhoto } from './garment-photo.entity';
 import { Outfit } from './outfit.entity';
 import { ShareableId } from './shareableId.entity';
 import { User } from './user.entity';
@@ -59,6 +61,11 @@ export class Garment extends ShareableId {
     nullable: true,
   })
   public photo?: Ref<File>;
+
+  @OneToMany(() => GarmentPhoto, (photo) => photo.garment, {
+    orderBy: { position: 'ASC', id: 'ASC' },
+  })
+  public photos = new Collection<GarmentPhoto>(this);
 
   @ManyToOne({
     entity: () => User,
