@@ -249,11 +249,15 @@
           Up / down
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
-        <div class="mt-auto flex justify-end gap-3">
-          <button type="button" id="photoEditorDelete" class="mr-auto hidden rounded-lg border border-red-500/40 px-4 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
-          <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
-          <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
-          <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Save photo</button>
+        <div class="mt-auto border-t border-slate-800 pt-4">
+          <div class="grid gap-2">
+            <button type="button" id="photoEditorDelete" class="hidden rounded-lg border border-red-500/40 px-3 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" id="photoEditorCancel" class="rounded-lg border border-slate-700 px-3 py-2 font-semibold text-slate-200 hover:border-slate-500 hover:bg-slate-800">Cancel</button>
+              <button type="button" id="photoEditorChoose" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Upload</button>
+              <button type="button" id="photoEditorSave" class="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-2 font-semibold text-white hover:border-emerald-500 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-700 disabled:text-slate-400" disabled>Save photo</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -640,10 +644,9 @@
     const openPhotoModal = async ({ existing = false, photoName = '', photoId = '' } = {}) => {
       resetPhotoEditor();
       if (photoIdInput) photoIdInput.value = photoId;
-      if (photoDelete) {
-        photoDelete.classList.toggle('hidden', !photoId);
-        photoDelete.style.display = photoId ? 'inline-flex' : 'none';
-      }
+      if (photoId) activePhotoId = String(photoId);
+      if (photoName) activePhotoName = photoName;
+      if (photoDelete) photoDelete.classList.toggle('hidden', !photoId);
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
       setPhotoStatus(existing ? 'Loading current photo...' : 'Upload or drag a photo, then frame it.');
