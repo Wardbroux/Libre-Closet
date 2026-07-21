@@ -1,4 +1,12 @@
 <main class="wardrobe-dashboard min-h-screen bg-slate-950 px-4 py-5 text-slate-100 sm:px-8">
+  <script>
+    (() => {
+      const stored = localStorage.getItem('wardrobeCardMin');
+      const isMobile = window.matchMedia('(max-width: 640px)').matches;
+      const initial = isMobile ? '180' : stored || '320';
+      document.documentElement.style.setProperty('--wardrobe-card-min', `${initial}px`);
+    })();
+  </script>
   <header class="dashboard-header mb-5 flex flex-col gap-4 border-b border-slate-800 pb-4 lg:flex-row lg:items-center lg:justify-between">
     <div class="flex items-center gap-3">
       <svg
@@ -345,19 +353,25 @@
 
     (() => {
       const slider = document.getElementById('wardrobeCardScale');
-      const grid = document.getElementById('wardrobeGrid');
-      if (!slider || !grid) return;
-      const stored = localStorage.getItem('wardrobeCardMin');
       const isMobile = window.matchMedia('(max-width: 640px)').matches;
+      if (!slider) return;
+      const stored = localStorage.getItem('wardrobeCardMin');
       const mobileDefault = '180';
       const setSize = (value) => {
         const size = Math.max(180, Math.min(620, Number(value) || 320));
         slider.value = String(size);
-        grid.style.setProperty('--wardrobe-card-min', `${size}px`);
-        if (!isMobile) localStorage.setItem('wardrobeCardMin', String(size));
+        document.documentElement.style.setProperty('--wardrobe-card-min', `${size}px`);
+        for (const grid of document.querySelectorAll('.dashboard-grid')) {
+          grid.style.setProperty('--wardrobe-card-min', `${size}px`);
+        }
+        localStorage.setItem('wardrobeCardMin', String(size));
       };
       setSize(isMobile ? mobileDefault : stored || slider.value);
       slider.addEventListener('input', () => setSize(slider.value));
+      slider.addEventListener('change', () => setSize(slider.value));
+      window.addEventListener('pageshow', () => {
+        setSize(isMobile ? mobileDefault : localStorage.getItem('wardrobeCardMin') || slider.value);
+      });
     })();
     (() => {
       const header = document.querySelector('.dashboard-header');
