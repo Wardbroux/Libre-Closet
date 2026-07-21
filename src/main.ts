@@ -190,15 +190,24 @@ async function bootstrap() {
       .map((s) => s.trim())
       .filter(Boolean);
   });
-  hbs.registerHelper('tagStyle', function (index: number) {
+  hbs.registerHelper('tagStyle', function (value: string | number) {
     const styles = [
       'border-color: rgba(52, 211, 153, .4); background: rgba(16, 185, 129, .15); color: rgb(167, 243, 208);',
       'border-color: rgba(251, 191, 36, .4); background: rgba(245, 158, 11, .15); color: rgb(253, 230, 138);',
       'border-color: rgba(167, 139, 250, .4); background: rgba(139, 92, 246, .15); color: rgb(221, 214, 254);',
       'border-color: rgba(56, 189, 248, .4); background: rgba(14, 165, 233, .15); color: rgb(186, 230, 253);',
       'border-color: rgba(251, 113, 133, .4); background: rgba(244, 63, 94, .15); color: rgb(254, 205, 211);',
+      'border-color: rgba(45, 212, 191, .4); background: rgba(20, 184, 166, .15); color: rgb(153, 246, 228);',
+      'border-color: rgba(129, 140, 248, .4); background: rgba(99, 102, 241, .15); color: rgb(199, 210, 254);',
+      'border-color: rgba(244, 114, 182, .4); background: rgba(236, 72, 153, .15); color: rgb(251, 207, 232);',
     ];
-    return styles[index % styles.length];
+    const input = String(value ?? '');
+    let hash = 0;
+    for (let i = 0; i < input.length; i += 1) {
+      hash = (hash << 5) - hash + input.charCodeAt(i);
+      hash |= 0;
+    }
+    return styles[Math.abs(hash) % styles.length];
   });
   hbs.registerHelper(
     'ifEquals',

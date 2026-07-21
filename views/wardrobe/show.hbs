@@ -78,13 +78,13 @@
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Name</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.name}}{{garment.name}}{{else}}Untitled item{{/if}}</div>
-            <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="edit-mode hidden input input-bordered justify-self-end border-slate-700 bg-slate-950" />
+            <input name="name" value="{{garment.name}}" placeholder="Puma High Top Sneakers" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Location</div>
             <div class="view-mode justify-self-end rounded-lg border border-emerald-500/25 bg-emerald-500/15 px-4 py-2 font-medium text-emerald-200">{{#if garment.location}}{{garment.location}}{{else}}Unassigned{{/if}}</div>
-            <select name="location" class="edit-mode hidden select select-bordered justify-self-end border-slate-700 bg-slate-950">
+            <select name="location" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
               <option value="">Unassigned</option>
               {{#each availableLocations}}
               <option value="{{this}}" {{#ifEquals this ../garment.location}}selected{{/ifEquals}}>{{this}}</option>
@@ -97,7 +97,7 @@
             <div class="view-mode flex flex-wrap items-center justify-end gap-2 text-emerald-200">
               {{#each (splitCategoryPath garment.category)}}<span>{{this}}</span>{{#unless @last}}<span class="text-slate-500">></span>{{/unless}}{{/each}}
             </div>
-            <select name="category" required class="edit-mode hidden select select-bordered justify-self-end border-slate-700 bg-slate-950">
+            <select name="category" required class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
               {{#each categoryGroups}}
               <optgroup label="{{this.label}}">
                 {{#each this.options}}
@@ -111,7 +111,7 @@
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Brand</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.brand}}{{garment.brand}}{{else}}-{{/if}}</div>
-            <input name="brand" value="{{garment.brand}}" placeholder="Puma" class="edit-mode hidden input input-bordered justify-self-end border-slate-700 bg-slate-950" />
+            <input name="brand" value="{{garment.brand}}" placeholder="Puma" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
@@ -119,13 +119,13 @@
             <div class="view-mode flex flex-wrap justify-end gap-2">
               {{#each (splitCsv garment.color)}}<span class="rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white">{{this}}</span>{{/each}}
             </div>
-            <input name="color" value="{{formatColors garment.color}}" placeholder="Green, White" class="edit-mode hidden input input-bordered justify-self-end border-slate-700 bg-slate-950" />
+            <input name="color" value="{{formatColors garment.color}}" placeholder="Green, White" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
           </div>
 
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Size</div>
             <div class="view-mode justify-self-end font-medium text-white">{{#if garment.size}}{{garment.size}}{{else}}-{{/if}}</div>
-            <select name="size" class="edit-mode hidden select select-bordered justify-self-end border-slate-700 bg-slate-950">
+            <select name="size" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
               <option value="">Select size</option>
               {{#each sizeGroups}}
               <optgroup label="{{this.label}}">
@@ -140,16 +140,29 @@
           <div class="grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Tags</div>
             <div class="view-mode flex flex-wrap justify-start gap-2 sm:justify-end">
-              {{#each (splitCsv garment.tags)}}<span class="rounded-md border px-3 py-1 text-sm" style="{{tagStyle @index}}">{{this}}</span>{{/each}}
+              {{#each (splitCsv garment.tags)}}<span class="rounded-md border px-3 py-1 text-sm" style="{{tagStyle this}}">{{this}}</span>{{/each}}
               {{#unless garment.tags}}<span class="text-sm text-slate-500">No tags yet</span>{{/unless}}
             </div>
-            <input name="tags" value="{{garment.tags}}" placeholder="Hightop, Chunky, Platform, Casual" class="edit-mode hidden input input-bordered justify-self-end border-slate-700 bg-slate-950" />
+            <div class="edit-mode hidden justify-self-end">
+              <input type="hidden" name="tags" id="tagValueInput" value="{{garment.tags}}" />
+              <div id="tagChipPicker" class="flex max-w-md flex-wrap justify-end gap-2">
+                {{#each availableTags}}
+                <button type="button" data-tag="{{this}}" class="tag-toggle rounded-md border px-3 py-1 text-sm transition" style="{{tagStyle this}}">
+                  {{this}}
+                </button>
+                {{/each}}
+              </div>
+              <div class="mt-2 flex justify-end gap-2">
+                <input id="newTagInput" type="text" placeholder="New tag" class="w-40 rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-white outline-none focus:border-emerald-400" />
+                <button id="addTagButton" type="button" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-emerald-400 hover:text-emerald-200">Add</button>
+              </div>
+            </div>
           </div>
 
           <div class="grid gap-3 px-4 py-4 sm:grid-cols-[160px_1fr]">
             <div class="text-slate-300">Notes</div>
-            <p class="view-mode justify-self-end rounded-lg border border-slate-800 bg-slate-900/70 p-4 text-slate-200">{{#if garment.notes}}{{garment.notes}}{{else}}-{{/if}}</p>
-            <textarea name="notes" rows="3" placeholder="Comfortable everyday sneakers." class="edit-mode hidden textarea textarea-bordered justify-self-end border-slate-700 bg-slate-950">{{garment.notes}}</textarea>
+            <p class="view-mode justify-self-end rounded-lg border border-slate-800 bg-slate-900/70 px-4 py-3 text-slate-200">{{#if garment.notes}}{{garment.notes}}{{else}}-{{/if}}</p>
+            <textarea name="notes" rows="2" placeholder="Comfortable everyday sneakers." class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right text-white outline-none focus:border-emerald-400">{{garment.notes}}</textarea>
           </div>
 
           <div class="edit-mode hidden flex justify-end gap-3 px-4 py-4">
@@ -191,6 +204,59 @@
 
     document.getElementById('editItemToggle')?.addEventListener('click', () => setEditing(true));
     document.getElementById('cancelEditItem')?.addEventListener('click', () => setEditing(false));
+
+    const tagInput = document.getElementById('tagValueInput');
+    const tagPicker = document.getElementById('tagChipPicker');
+    const newTagInput = document.getElementById('newTagInput');
+    const addTagButton = document.getElementById('addTagButton');
+    const selectedTags = new Set(
+      (tagInput?.value || '')
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    );
+
+    const syncTags = () => {
+      if (tagInput) tagInput.value = [...selectedTags].join(',');
+      for (const button of document.querySelectorAll('.tag-toggle')) {
+        const selected = selectedTags.has(button.dataset.tag);
+        button.classList.toggle('ring-2', selected);
+        button.classList.toggle('ring-white/80', selected);
+        button.classList.toggle('opacity-40', !selected);
+      }
+    };
+
+    const addTag = (tag) => {
+      const clean = tag.trim();
+      if (!clean) return;
+      selectedTags.add(clean);
+      if (!document.querySelector(`.tag-toggle[data-tag="${CSS.escape(clean)}"]`)) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.tag = clean;
+        button.textContent = clean;
+        button.className = 'tag-toggle rounded-md border border-emerald-500/40 bg-emerald-500/15 px-3 py-1 text-sm text-emerald-200 transition';
+        tagPicker?.appendChild(button);
+      }
+      if (newTagInput) newTagInput.value = '';
+      syncTags();
+    };
+
+    tagPicker?.addEventListener('click', (event) => {
+      const button = event.target.closest('.tag-toggle');
+      if (!button) return;
+      const tag = button.dataset.tag;
+      if (selectedTags.has(tag)) selectedTags.delete(tag);
+      else selectedTags.add(tag);
+      syncTags();
+    });
+    addTagButton?.addEventListener('click', () => addTag(newTagInput?.value || ''));
+    newTagInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      addTag(newTagInput.value);
+    });
+    syncTags();
     wireUpPhotoInput();
   </script>
 </main>

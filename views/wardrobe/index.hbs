@@ -207,7 +207,7 @@
           <span class="rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-300">{{this.location}}</span>
           {{/if}}
           {{#each (splitCsv this.tags)}}
-          <span class="rounded-md bg-sky-500/15 px-2.5 py-1 text-xs text-sky-300">{{this}}</span>
+          <span class="rounded-md border px-2.5 py-1 text-xs" style="{{tagStyle this}}">{{this}}</span>
           {{/each}}
           {{#unless this.location}}
           {{#unless this.tags}}

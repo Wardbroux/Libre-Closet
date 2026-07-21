@@ -309,6 +309,7 @@ export class WardrobeController {
       categories,
       categoryGroups: this.categoryGroups(filters.categories),
       availableLocations: filters.locations,
+      availableTags: filters.tags,
       sizeGroups: SIZE_GROUPS,
     };
   }
