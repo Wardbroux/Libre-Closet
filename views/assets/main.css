@@ -669,11 +669,19 @@ body {
     line-height: 1.2;
   }
 
+  #detailSummaryHeader {
+    margin-inline: -0.75rem;
+    padding: 1rem 0.75rem 1.25rem;
+    border-bottom: 1px solid rgba(30, 41, 59, 0.85);
+    background: #020617;
+  }
+
   .detail-info-column form {
     margin-inline: -0.75rem;
     border-left: 0;
     border-right: 0;
     border-radius: 0;
+    background: #020617;
   }
 
   .detail-info-column form > div {
@@ -686,6 +694,10 @@ body {
   .detail-info-column textarea,
   .detail-info-column button {
     font-size: 16px;
+  }
+
+  .detail-info-column .optional-detail-row .view-mode.flex {
+    justify-content: flex-end;
   }
 
   #photoEditorModal {
