@@ -308,9 +308,10 @@ export class WardrobeController {
       viewOwner: viewOwner ?? null,
       categories,
       categoryGroups: this.categoryGroups(filters.categories),
+      categoryPaths: this.categoryPaths(filters.categories),
       availableLocations: filters.locations,
       availableTags: filters.tags,
-      sizeGroups: SIZE_GROUPS,
+      sizeGroups: this.editSizeGroups(),
     };
   }
 
@@ -852,6 +853,13 @@ export class WardrobeController {
         href: this.wardrobeUrl(query, { size }, viewOwner),
         active: query.size === size,
       })),
+    }));
+  }
+
+  private editSizeGroups() {
+    return SIZE_GROUPS.map((group) => ({
+      ...group,
+      kind: group.label === 'Shoe sizes' ? 'shoes' : 'clothing',
     }));
   }
 

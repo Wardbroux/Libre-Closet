@@ -97,15 +97,17 @@
             <div class="view-mode flex flex-wrap items-center justify-end gap-2 text-emerald-200">
               {{#each (splitCategoryPath garment.category)}}<span>{{this}}</span>{{#unless @last}}<span class="text-slate-500">></span>{{/unless}}{{/each}}
             </div>
-            <select name="category" required class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
-              {{#each categoryGroups}}
-              <optgroup label="{{this.label}}">
-                {{#each this.options}}
-                <option value="{{this}}" {{#ifEquals this ../../garment.category}}selected{{/ifEquals}}>{{this}}</option>
-                {{/each}}
-              </optgroup>
-              {{/each}}
-            </select>
+            <div class="edit-mode hidden w-full max-w-xs justify-self-end">
+              <input type="hidden" name="category" id="categoryValueInput" value="{{garment.category}}" required />
+              <button type="button" id="categoryPickerButton" class="flex w-full items-center justify-between rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none hover:border-emerald-400">
+                <span id="categoryPickerLabel">{{garment.category}}</span>
+                <span class="text-slate-400">></span>
+              </button>
+              <div id="categoryPickerPanel" class="mt-2 hidden rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
+                <div id="categoryBreadcrumbs" class="mb-2 flex flex-wrap gap-2 border-b border-slate-800 pb-2 text-xs text-slate-400"></div>
+                <div id="categoryPickerOptions" class="max-h-72 overflow-y-auto"></div>
+              </div>
+            </div>
           </div>
 
           <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
@@ -128,7 +130,7 @@
             <select name="size" class="edit-mode hidden w-full max-w-xs justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400">
               <option value="">Select size</option>
               {{#each sizeGroups}}
-              <optgroup label="{{this.label}}">
+              <optgroup label="{{this.label}}" data-size-kind="{{this.kind}}">
                 {{#each this.sizes}}
                 <option value="{{this}}" {{#ifEquals this ../../garment.size}}selected{{/ifEquals}}>{{this}}</option>
                 {{/each}}
@@ -204,6 +206,110 @@
 
     document.getElementById('editItemToggle')?.addEventListener('click', () => setEditing(true));
     document.getElementById('cancelEditItem')?.addEventListener('click', () => setEditing(false));
+
+    const categoryPaths = {{{json categoryPaths}}};
+    const categoryInput = document.getElementById('categoryValueInput');
+    const categoryButton = document.getElementById('categoryPickerButton');
+    const categoryLabel = document.getElementById('categoryPickerLabel');
+    const categoryPanel = document.getElementById('categoryPickerPanel');
+    const categoryBreadcrumbs = document.getElementById('categoryBreadcrumbs');
+    const categoryOptions = document.getElementById('categoryPickerOptions');
+    const sizeSelect = document.querySelector('select[name="size"]');
+
+    const pathParts = (path) => path.split('>').map((part) => part.trim()).filter(Boolean);
+    const pathLeaf = (path) => pathParts(path).at(-1) || path || 'Category';
+    const childLabels = (parent) => {
+      if (!parent) return ['Clothing', 'Shoes', 'Bags', 'Accessories', 'Other'];
+      const parentParts = parent ? pathParts(parent) : [];
+      const labels = [];
+      for (const path of categoryPaths) {
+        const parts = pathParts(path);
+        if (parent === 'Clothing') {
+          if (['Accessories', 'Bags', 'Other', 'Shoes'].includes(parts[0])) continue;
+          if (!labels.includes(parts[0])) labels.push(parts[0]);
+          continue;
+        }
+        const matches = parentParts.every((part, index) => parts[index] === part);
+        if (!matches || parts.length <= parentParts.length) continue;
+        const next = parts[parentParts.length];
+        if (!labels.includes(next)) labels.push(next);
+      }
+      return labels;
+    };
+    const hasCategoryChildren = (path) => childLabels(path).length > 0;
+    const syncCategoryLabel = () => {
+      if (!categoryLabel || !categoryInput) return;
+      categoryLabel.textContent = categoryInput.value || 'Category';
+    };
+    const syncSizeOptions = () => {
+      if (!sizeSelect || !categoryInput) return;
+      const wantsShoes = categoryInput.value.startsWith('Shoes');
+      for (const group of sizeSelect.querySelectorAll('optgroup')) {
+        const isShoeGroup = group.dataset.sizeKind === 'shoes';
+        group.hidden = wantsShoes ? !isShoeGroup : isShoeGroup;
+        for (const option of group.querySelectorAll('option')) {
+          option.disabled = group.hidden;
+        }
+      }
+      const selectedOption = sizeSelect.selectedOptions[0];
+      if (selectedOption?.parentElement?.hidden) sizeSelect.value = '';
+    };
+    const renderCategoryPicker = (parent = '') => {
+      if (!categoryOptions || !categoryBreadcrumbs) return;
+      categoryOptions.innerHTML = '';
+      categoryBreadcrumbs.innerHTML = '';
+
+      const crumbs = parent ? pathParts(parent) : [];
+      const rootCrumb = document.createElement('button');
+      rootCrumb.type = 'button';
+      rootCrumb.textContent = 'All';
+      rootCrumb.className = 'hover:text-emerald-300';
+      rootCrumb.addEventListener('click', () => renderCategoryPicker(''));
+      categoryBreadcrumbs.appendChild(rootCrumb);
+      crumbs.forEach((crumb, index) => {
+        categoryBreadcrumbs.append(' / ');
+        const value = crumbs.slice(0, index + 1).join(' > ');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = crumb;
+        button.className = 'hover:text-emerald-300';
+        button.addEventListener('click', () => renderCategoryPicker(value));
+        categoryBreadcrumbs.appendChild(button);
+      });
+
+      for (const label of childLabels(parent)) {
+        const value = parent === 'Clothing' ? label : parent ? `${parent} > ${label}` : label;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200';
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = label;
+        const arrowSpan = document.createElement('span');
+        arrowSpan.className = 'text-slate-500';
+        arrowSpan.textContent = hasCategoryChildren(value) ? '>' : '';
+        button.append(labelSpan, arrowSpan);
+        button.addEventListener('click', () => {
+          categoryInput.value = value;
+          syncCategoryLabel();
+          syncSizeOptions();
+          if (hasCategoryChildren(value)) renderCategoryPicker(value);
+          else categoryPanel?.classList.add('hidden');
+        });
+        categoryOptions.appendChild(button);
+      }
+    };
+
+    categoryButton?.addEventListener('click', () => {
+      categoryPanel?.classList.toggle('hidden');
+      renderCategoryPicker('');
+    });
+    document.addEventListener('click', (event) => {
+      if (!categoryPanel || categoryPanel.classList.contains('hidden')) return;
+      if (event.target.closest('#categoryPickerButton') || event.target.closest('#categoryPickerPanel')) return;
+      categoryPanel.classList.add('hidden');
+    });
+    syncCategoryLabel();
+    syncSizeOptions();
 
     const tagInput = document.getElementById('tagValueInput');
     const tagPicker = document.getElementById('tagChipPicker');
