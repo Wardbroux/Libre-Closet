@@ -196,6 +196,11 @@
     {{#each garments}}
     <a href="/wardrobe/{{this.id}}{{#if ../viewOwner}}?ownerId={{../viewOwner}}{{/if}}" class="group overflow-hidden rounded-lg border border-slate-800 bg-slate-900/80 shadow-lg shadow-black/20 transition hover:border-emerald-500/60 {{#if this.archived}}opacity-50{{/if}}">
       <figure class="relative aspect-[4/3] bg-slate-950">
+        {{#if this.location}}
+        <span class="absolute left-3 top-3 z-10 rounded-md border border-emerald-500/30 bg-slate-950/80 px-2.5 py-1 text-xs font-medium text-emerald-300 shadow-lg shadow-black/30 backdrop-blur">
+          {{this.location}}
+        </span>
+        {{/if}}
         {{#if this.photo}}
         <img src="/file/nobg/{{this.photo.fileName}}" alt="{{this.name}}" class="h-full w-full object-contain p-5 transition group-hover:scale-[1.02]" />
         {{else}}
@@ -215,9 +220,6 @@
             <span class="rounded-md border px-2.5 py-1 text-xs" style="{{tagStyle this}}">{{this}}</span>
             {{/each}}
           </div>
-          {{#if this.location}}
-          <span class="shrink-0 rounded-md bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-300">{{this.location}}</span>
-          {{/if}}
         </div>
       </div>
     </a>
