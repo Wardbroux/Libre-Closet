@@ -217,25 +217,35 @@
     const sizeSelect = document.querySelector('select[name="size"]');
 
     const pathParts = (path) => path.split('>').map((part) => part.trim()).filter(Boolean);
-    const pathLeaf = (path) => pathParts(path).at(-1) || path || 'Category';
-    const childLabels = (parent) => {
-      if (!parent) return ['Clothing', 'Shoes', 'Bags', 'Accessories', 'Other'];
-      const parentParts = parent ? pathParts(parent) : [];
-      const labels = [];
-      for (const path of categoryPaths) {
-        const parts = pathParts(path);
-        if (parent === 'Clothing') {
-          if (['Accessories', 'Bags', 'Other', 'Shoes'].includes(parts[0])) continue;
-          if (!labels.includes(parts[0])) labels.push(parts[0]);
-          continue;
-        }
-        const matches = parentParts.every((part, index) => parts[index] === part);
-        if (!matches || parts.length <= parentParts.length) continue;
-        const next = parts[parentParts.length];
-        if (!labels.includes(next)) labels.push(next);
-      }
-      return labels;
+    const clothingRoots = new Set();
+    const categoryChildren = new Map();
+    const addChild = (parent, child) => {
+      if (!categoryChildren.has(parent)) categoryChildren.set(parent, []);
+      const children = categoryChildren.get(parent);
+      if (!children.includes(child)) children.push(child);
     };
+
+    addChild('', 'Clothing');
+    addChild('', 'Shoes');
+    addChild('', 'Bags');
+    addChild('', 'Accessories');
+    addChild('', 'Other');
+
+    for (const path of categoryPaths) {
+      const parts = pathParts(path);
+      if (!parts.length) continue;
+      const root = parts[0];
+      if (!['Accessories', 'Bags', 'Other', 'Shoes'].includes(root)) {
+        clothingRoots.add(root);
+      }
+      for (let index = 1; index < parts.length; index += 1) {
+        const parent = parts.slice(0, index).join(' > ');
+        addChild(parent, parts[index]);
+      }
+    }
+    for (const root of clothingRoots) addChild('Clothing', root);
+
+    const childLabels = (parent) => categoryChildren.get(parent) || [];
     const hasCategoryChildren = (path) => childLabels(path).length > 0;
     const syncCategoryLabel = () => {
       if (!categoryLabel || !categoryInput) return;
