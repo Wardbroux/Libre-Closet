@@ -612,7 +612,7 @@
     const submitEditedPhoto = async () => {
       const file = await exportPhotoFile();
       if (!file || !uploadInput || !uploadForm) return;
-      setPhotoStatus('Preparing background removal...');
+      setPhotoStatus('Removing background... this can take a little while.');
       if (photoSave) photoSave.disabled = true;
       uploadInput.dataset.skipMaskEditor = 'true';
       const dt = new DataTransfer();
@@ -632,7 +632,11 @@
       openPhotoModal({ existing: true });
     });
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
-    photoDropZone?.addEventListener('click', () => photoFileInput?.click());
+    photoDropZone?.addEventListener('click', (event) => {
+      if (event.target === photoCanvas) return;
+      photoFileInput?.click();
+    });
+    photoCanvas?.addEventListener('click', (event) => event.stopPropagation());
     photoCancel?.addEventListener('click', closePhotoModal);
     photoSave?.addEventListener('click', submitEditedPhoto);
     photoFileInput?.addEventListener('change', async () => {
@@ -654,6 +658,7 @@
       if (file) await loadPhotoBlob(file);
     });
     photoCanvas?.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
       photoDragging = true;
       lastPointer = { x: event.clientX, y: event.clientY };
       photoCanvas.setPointerCapture(event.pointerId);
@@ -671,6 +676,14 @@
       photoDragging = false;
       lastPointer = null;
     });
+    photoCanvas?.addEventListener('wheel', (event) => {
+      if (!zoomInput) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = parseFloat(zoomInput.value) + (event.deltaY < 0 ? 0.08 : -0.08);
+      zoomInput.value = String(Math.max(1, Math.min(3, next)));
+      drawPhotoPreview();
+    }, { passive: false });
     wireUpPhotoInput();
   </script>
 </main>

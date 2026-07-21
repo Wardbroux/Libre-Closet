@@ -25,9 +25,29 @@
       <form
         id="garmentForm"
         method="POST"
+        {{#unless garment}}enctype="multipart/form-data"{{/unless}}
         action="{{#if isClone}}/wardrobe/{{garment.id}}/clone{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}{{else if garment}}/wardrobe/{{garment.id}}{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}{{else}}/wardrobe{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}{{/if}}"
         class="divide-y divide-slate-800 rounded-lg border border-slate-800 bg-slate-950/50"
       >
+        {{#unless garment}}
+        <div class="grid gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
+          <div class="text-slate-300">Photo</div>
+          <div class="justify-self-end">
+            <div id="newPhotoPreview" class="mb-3 hidden aspect-square w-32 rounded-lg border border-emerald-400 bg-slate-900 p-2">
+              <img id="newPhotoPreviewImg" alt="" class="h-full w-full object-contain" />
+            </div>
+            <button type="button" id="addPhotoButton" class="flex aspect-square w-32 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-slate-500 bg-slate-900/60 text-sm text-slate-300 hover:border-emerald-400 hover:text-emerald-200">
+              <span class="text-3xl leading-none">+</span>
+              Add photo
+            </button>
+            <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp" />
+            <input type="file" id="photoInput" name="photo" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+            <button id="photoBtn" type="button" class="hidden" disabled>Prepare photo</button>
+            <p id="newPhotoStatus" class="mt-2 text-sm text-slate-500"></p>
+          </div>
+        </div>
+        {{/unless}}
+
         <div class="grid grid-cols-[120px_1fr] items-center gap-4 px-4 py-4 sm:grid-cols-[160px_1fr]">
           <div class="text-slate-300">Name</div>
           <input name="name" value="{{#if isClone}}{{cloneName}}{{else if garment}}{{garment.name}}{{/if}}" placeholder="Puma High Top Sneakers" class="w-full max-w-sm justify-self-end rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-right font-medium text-white outline-none focus:border-emerald-400" />
@@ -129,7 +149,49 @@
     </section>
   </div>
 
+  {{#unless garment}}
+  <div id="photoEditorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 px-4 py-6 backdrop-blur-sm">
+    <div class="grid max-h-full w-full max-w-4xl gap-4 overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 p-4 shadow-2xl shadow-black/50 lg:grid-cols-[1fr_260px]">
+      <div class="flex min-h-[360px] flex-col gap-3">
+        <div id="photoDropZone" class="relative flex min-h-[320px] flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-600 bg-slate-900/70">
+          <div id="photoDropHint" class="px-6 text-center text-slate-300">
+            <div class="text-lg font-semibold text-white">Drop photo here</div>
+            <div class="mt-2 text-sm text-slate-400">or click to upload</div>
+          </div>
+          <canvas id="photoEditorCanvas" class="hidden max-h-[68vh] max-w-full touch-none rounded-md"></canvas>
+        </div>
+        <input id="photoEditorFileInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+      </div>
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 class="text-xl font-semibold text-white">Photo</h2>
+          <p id="photoEditorStatus" class="mt-1 text-sm text-slate-400">Upload or drag a photo, then frame it.</p>
+        </div>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Zoom
+          <input id="photoZoomInput" type="range" min="1" max="3" step="0.01" value="1" class="range range-sm" />
+        </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Left / right
+          <input id="photoXInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
+        </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Up / down
+          <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
+        </label>
+        <div class="mt-auto flex justify-end gap-3">
+          <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
+          <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
+          <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Use photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{/unless}}
+
   <script type="module">
+    import { wireUpPhotoInput } from '/js/background-removal.js';
+
     const categoryTree = {{{json categoryTree}}};
     const categoryInput = document.getElementById('categoryValueInput');
     const categoryButton = document.getElementById('categoryPickerButton');
@@ -313,6 +375,172 @@
       addTag(newTagInput.value);
     });
 
+    const photoModal = document.getElementById('photoEditorModal');
+    const photoDropZone = document.getElementById('photoDropZone');
+    const photoDropHint = document.getElementById('photoDropHint');
+    const photoCanvas = document.getElementById('photoEditorCanvas');
+    const photoFileInput = document.getElementById('photoEditorFileInput');
+    const photoChoose = document.getElementById('photoEditorChoose');
+    const photoSave = document.getElementById('photoEditorSave');
+    const photoCancel = document.getElementById('photoEditorCancel');
+    const photoStatus = document.getElementById('photoEditorStatus');
+    const zoomInput = document.getElementById('photoZoomInput');
+    const xInput = document.getElementById('photoXInput');
+    const yInput = document.getElementById('photoYInput');
+    const uploadInput = document.getElementById('photoInput');
+    const nobgInput = document.getElementById('nobgPhotoInput');
+    const newPhotoPreview = document.getElementById('newPhotoPreview');
+    const newPhotoPreviewImg = document.getElementById('newPhotoPreviewImg');
+    const newPhotoStatus = document.getElementById('newPhotoStatus');
+    let photoImage = null;
+    let photoObjectUrl = '';
+    let photoDragging = false;
+    let lastPointer = null;
+
+    const setPhotoStatus = (text) => {
+      if (photoStatus) photoStatus.textContent = text;
+    };
+    const resetPhotoControls = () => {
+      if (zoomInput) zoomInput.value = '1';
+      if (xInput) xInput.value = '0';
+      if (yInput) yInput.value = '0';
+    };
+    const drawPhotoPreview = () => {
+      if (!photoCanvas || !photoImage) return;
+      const size = 900;
+      photoCanvas.width = size;
+      photoCanvas.height = size;
+      const ctx = photoCanvas.getContext('2d');
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, size, size);
+      const zoom = parseFloat(zoomInput?.value || '1');
+      const baseScale = Math.min(size / photoImage.naturalWidth, size / photoImage.naturalHeight);
+      const scale = baseScale * zoom;
+      const width = photoImage.naturalWidth * scale;
+      const height = photoImage.naturalHeight * scale;
+      const x = (size - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * size * 0.4;
+      const y = (size - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * size * 0.4;
+      ctx.drawImage(photoImage, x, y, width, height);
+    };
+    const loadPhotoBlob = async (blob) => {
+      if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+      photoObjectUrl = URL.createObjectURL(blob);
+      photoImage = new Image();
+      await new Promise((resolve, reject) => {
+        photoImage.onload = resolve;
+        photoImage.onerror = reject;
+        photoImage.src = photoObjectUrl;
+      });
+      resetPhotoControls();
+      photoDropHint?.classList.add('hidden');
+      photoCanvas?.classList.remove('hidden');
+      if (photoSave) photoSave.disabled = false;
+      setPhotoStatus('Frame the photo, then save it.');
+      drawPhotoPreview();
+    };
+    const openPhotoModal = () => {
+      photoModal?.classList.remove('hidden');
+      photoModal?.classList.add('flex');
+      setPhotoStatus('Upload or drag a photo, then frame it.');
+    };
+    const closePhotoModal = () => {
+      photoModal?.classList.add('hidden');
+      photoModal?.classList.remove('flex');
+    };
+    const exportPhotoFile = async () => {
+      if (!photoImage) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = 1400;
+      canvas.height = 1400;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const zoom = parseFloat(zoomInput?.value || '1');
+      const baseScale = Math.min(canvas.width / photoImage.naturalWidth, canvas.height / photoImage.naturalHeight);
+      const scale = baseScale * zoom;
+      const width = photoImage.naturalWidth * scale;
+      const height = photoImage.naturalHeight * scale;
+      const x = (canvas.width - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * canvas.width * 0.4;
+      const y = (canvas.height - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * canvas.height * 0.4;
+      ctx.drawImage(photoImage, x, y, width, height);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
+      return new File([blob], 'garment-photo.png', { type: 'image/png' });
+    };
+    const waitForPhotoProcessing = () =>
+      new Promise((resolve) => {
+        uploadInput?.addEventListener('photo-processing-complete', resolve, { once: true });
+      });
+    const preparePhoto = async () => {
+      const file = await exportPhotoFile();
+      if (!file || !uploadInput) return;
+      setPhotoStatus('Removing background... this can take a little while.');
+      if (photoSave) photoSave.disabled = true;
+      uploadInput.dataset.skipMaskEditor = 'true';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      uploadInput.files = dt.files;
+      const processing = waitForPhotoProcessing();
+      uploadInput.dispatchEvent(new Event('change'));
+      await processing;
+      if (newPhotoPreviewImg) newPhotoPreviewImg.src = URL.createObjectURL(file);
+      newPhotoPreview?.classList.remove('hidden');
+      if (newPhotoStatus) newPhotoStatus.textContent = nobgInput?.files?.length ? 'Photo ready with background removed.' : 'Photo ready.';
+      closePhotoModal();
+      if (photoSave) photoSave.disabled = false;
+    };
+    document.getElementById('addPhotoButton')?.addEventListener('click', openPhotoModal);
+    photoChoose?.addEventListener('click', () => photoFileInput?.click());
+    photoDropZone?.addEventListener('click', (event) => {
+      if (event.target === photoCanvas) return;
+      photoFileInput?.click();
+    });
+    photoCanvas?.addEventListener('click', (event) => event.stopPropagation());
+    photoCancel?.addEventListener('click', closePhotoModal);
+    photoSave?.addEventListener('click', preparePhoto);
+    photoFileInput?.addEventListener('change', async () => {
+      const file = photoFileInput.files?.[0];
+      if (file) await loadPhotoBlob(file);
+    });
+    for (const input of [zoomInput, xInput, yInput]) input?.addEventListener('input', drawPhotoPreview);
+    photoDropZone?.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      photoDropZone.classList.add('border-emerald-400');
+    });
+    photoDropZone?.addEventListener('dragleave', () => photoDropZone.classList.remove('border-emerald-400'));
+    photoDropZone?.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      photoDropZone.classList.remove('border-emerald-400');
+      const file = event.dataTransfer?.files?.[0];
+      if (file) await loadPhotoBlob(file);
+    });
+    photoCanvas?.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      photoDragging = true;
+      lastPointer = { x: event.clientX, y: event.clientY };
+      photoCanvas.setPointerCapture(event.pointerId);
+    });
+    photoCanvas?.addEventListener('pointermove', (event) => {
+      if (!photoDragging || !lastPointer || !xInput || !yInput) return;
+      const dx = event.clientX - lastPointer.x;
+      const dy = event.clientY - lastPointer.y;
+      xInput.value = String(Math.max(-100, Math.min(100, parseFloat(xInput.value) + dx / 3)));
+      yInput.value = String(Math.max(-100, Math.min(100, parseFloat(yInput.value) + dy / 3)));
+      lastPointer = { x: event.clientX, y: event.clientY };
+      drawPhotoPreview();
+    });
+    photoCanvas?.addEventListener('pointerup', () => {
+      photoDragging = false;
+      lastPointer = null;
+    });
+    photoCanvas?.addEventListener('wheel', (event) => {
+      if (!zoomInput) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const next = parseFloat(zoomInput.value) + (event.deltaY < 0 ? 0.08 : -0.08);
+      zoomInput.value = String(Math.max(1, Math.min(3, next)));
+      drawPhotoPreview();
+    }, { passive: false });
+
     document.addEventListener('click', (event) => {
       if (!(event.target instanceof Element)) return;
       if (!event.target.closest('#categoryPickerButton, #categoryPickerPanel')) categoryPanel?.classList.add('hidden');
@@ -329,5 +557,6 @@
     syncSizeOptions();
     syncColors();
     syncTags();
+    wireUpPhotoInput();
   </script>
 </main>

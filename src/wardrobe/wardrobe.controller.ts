@@ -211,6 +211,59 @@ export class WardrobeController {
     }
 
     // Fastify gives string if one checkbox, string[] if multiple — normalise both
+    const contentType = req.headers['content-type'] ?? '';
+    if (contentType.includes('multipart/form-data')) {
+      const fields: Record<string, string> = {};
+      const files = (async function* () {
+        for await (const part of (req as any).parts()) {
+          if (part.type === 'file') {
+            yield part;
+          } else {
+            fields[part.fieldname] = String(part.value ?? '');
+          }
+        }
+      })();
+      const garment = await this.garmentService.create(
+        {
+          files,
+          get name() {
+            return fields.name;
+          },
+          get category() {
+            return fields.category;
+          },
+          get brand() {
+            return fields.brand;
+          },
+          get color() {
+            return fields.color;
+          },
+          get size() {
+            return fields.size;
+          },
+          get location() {
+            return fields.location;
+          },
+          get tags() {
+            return fields.tags;
+          },
+          get notes() {
+            return fields.notes;
+          },
+          get washingDetails() {
+            return fields.washingDetails;
+          },
+          get dateAquired() {
+            return fields.dateAquired;
+          },
+        },
+        viewOwner ?? userId,
+      );
+
+      const redirectSuffix = viewOwner ? `?ownerId=${viewOwner}` : '';
+      return reply.redirect(`/wardrobe/${garment.id}${redirectSuffix}`, 302);
+    }
+
     const rawColors = Array.isArray(body.color)
       ? body.color
       : (body.color
