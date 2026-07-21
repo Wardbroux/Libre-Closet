@@ -183,6 +183,10 @@
           Up / down
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Rotate
+          <input id="photoRotateInput" type="range" min="-180" max="180" step="1" value="0" class="range range-sm" />
+        </label>
         <div class="mt-auto flex flex-col gap-2">
           <div class="grid grid-cols-3 gap-2">
             <button type="button" id="photoEditorCamera" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Camera</button>
@@ -420,6 +424,7 @@
     const zoomInput = document.getElementById('photoZoomInput');
     const xInput = document.getElementById('photoXInput');
     const yInput = document.getElementById('photoYInput');
+    const rotateInput = document.getElementById('photoRotateInput');
     const uploadInput = document.getElementById('photoInput');
     const nobgInput = document.getElementById('nobgPhotoInput');
     const newPhotoPreview = document.getElementById('newPhotoPreview');
@@ -429,6 +434,9 @@
     let photoObjectUrl = '';
     let photoDragging = false;
     let lastPointer = null;
+    const activePointers = new Map();
+    let pinchStartDistance = 0;
+    let pinchStartZoom = 1;
 
     const setPhotoStatus = (text) => {
       if (photoStatus) photoStatus.textContent = text;
@@ -437,6 +445,28 @@
       if (zoomInput) zoomInput.value = '1';
       if (xInput) xInput.value = '0';
       if (yInput) yInput.value = '0';
+      if (rotateInput) rotateInput.value = '0';
+      activePointers.clear();
+      photoDragging = false;
+      lastPointer = null;
+      pinchStartDistance = 0;
+    };
+    const drawImageToCanvas = (ctx, canvas, image) => {
+      const rotation = (parseFloat(rotateInput?.value || '0') * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(rotation));
+      const sin = Math.abs(Math.sin(rotation));
+      const rotatedWidth = image.naturalWidth * cos + image.naturalHeight * sin;
+      const rotatedHeight = image.naturalWidth * sin + image.naturalHeight * cos;
+      const zoom = parseFloat(zoomInput?.value || '1');
+      const baseScale = Math.min(canvas.width / rotatedWidth, canvas.height / rotatedHeight);
+      const scale = baseScale * zoom;
+      const x = canvas.width / 2 + (parseFloat(xInput?.value || '0') / 100) * canvas.width * 0.4;
+      const y = canvas.height / 2 + (parseFloat(yInput?.value || '0') / 100) * canvas.height * 0.4;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.drawImage(image, (-image.naturalWidth * scale) / 2, (-image.naturalHeight * scale) / 2, image.naturalWidth * scale, image.naturalHeight * scale);
+      ctx.restore();
     };
     const drawPhotoPreview = () => {
       if (!photoCanvas || !photoImage) return;
@@ -446,14 +476,7 @@
       const ctx = photoCanvas.getContext('2d');
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, size, size);
-      const zoom = parseFloat(zoomInput?.value || '1');
-      const baseScale = Math.min(size / photoImage.naturalWidth, size / photoImage.naturalHeight);
-      const scale = baseScale * zoom;
-      const width = photoImage.naturalWidth * scale;
-      const height = photoImage.naturalHeight * scale;
-      const x = (size - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * size * 0.4;
-      const y = (size - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * size * 0.4;
-      ctx.drawImage(photoImage, x, y, width, height);
+      drawImageToCanvas(ctx, photoCanvas, photoImage);
     };
     const loadPhotoBlob = async (blob) => {
       if (blob.type && !blob.type.startsWith('image/')) {
@@ -492,14 +515,7 @@
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const zoom = parseFloat(zoomInput?.value || '1');
-      const baseScale = Math.min(canvas.width / photoImage.naturalWidth, canvas.height / photoImage.naturalHeight);
-      const scale = baseScale * zoom;
-      const width = photoImage.naturalWidth * scale;
-      const height = photoImage.naturalHeight * scale;
-      const x = (canvas.width - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * canvas.width * 0.4;
-      const y = (canvas.height - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * canvas.height * 0.4;
-      ctx.drawImage(photoImage, x, y, width, height);
+      drawImageToCanvas(ctx, canvas, photoImage);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
       return new File([blob], 'garment-photo.png', { type: 'image/png' });
     };
@@ -549,7 +565,7 @@
       const file = photoFilesInput.files?.[0];
       if (file) await loadPhotoBlob(file);
     });
-    for (const input of [zoomInput, xInput, yInput]) input?.addEventListener('input', drawPhotoPreview);
+    for (const input of [zoomInput, xInput, yInput, rotateInput]) input?.addEventListener('input', drawPhotoPreview);
     photoDropZone?.addEventListener('dragover', (event) => {
       event.preventDefault();
       photoDropZone.classList.add('border-emerald-400');
@@ -563,11 +579,28 @@
     });
     photoCanvas?.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
-      photoDragging = true;
-      lastPointer = { x: event.clientX, y: event.clientY };
+      activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (activePointers.size === 2) {
+        const points = [...activePointers.values()];
+        pinchStartDistance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        pinchStartZoom = parseFloat(zoomInput?.value || '1');
+        photoDragging = false;
+      } else {
+        photoDragging = true;
+        lastPointer = { x: event.clientX, y: event.clientY };
+      }
       photoCanvas.setPointerCapture(event.pointerId);
     });
     photoCanvas?.addEventListener('pointermove', (event) => {
+      if (activePointers.has(event.pointerId)) activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (activePointers.size === 2 && zoomInput && pinchStartDistance) {
+        event.preventDefault();
+        const points = [...activePointers.values()];
+        const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        zoomInput.value = String(Math.max(1, Math.min(3, pinchStartZoom * (distance / pinchStartDistance))));
+        drawPhotoPreview();
+        return;
+      }
       if (!photoDragging || !lastPointer || !xInput || !yInput) return;
       const dx = event.clientX - lastPointer.x;
       const dy = event.clientY - lastPointer.y;
@@ -576,10 +609,14 @@
       lastPointer = { x: event.clientX, y: event.clientY };
       drawPhotoPreview();
     });
-    photoCanvas?.addEventListener('pointerup', () => {
+    const endPointer = (event) => {
+      activePointers.delete(event.pointerId);
       photoDragging = false;
       lastPointer = null;
-    });
+      pinchStartDistance = 0;
+    };
+    photoCanvas?.addEventListener('pointerup', endPointer);
+    photoCanvas?.addEventListener('pointercancel', endPointer);
     photoCanvas?.addEventListener('wheel', (event) => {
       if (!zoomInput) return;
       event.preventDefault();

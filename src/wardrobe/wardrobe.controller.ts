@@ -702,6 +702,33 @@ export class WardrobeController {
     return reply.send({ ok: true });
   }
 
+  @Post(':id/photos/:photoId/nobg')
+  async updatePhotoNobg(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('photoId', ParseIntPipe) photoId: number,
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+    @Query('ownerId') ownerId: string | undefined,
+  ) {
+    const userId = this.userId(req);
+    const viewOwner = ownerId ? parseInt(ownerId, 10) : undefined;
+
+    if (userId != null && viewOwner != null && viewOwner !== userId) {
+      const canManage = await this.shareService.canManage(userId, viewOwner);
+      if (!canManage) throw new ForbiddenException();
+    }
+
+    const nobgPhoto = await req.file();
+    await this.garmentService.updateGalleryPhotoNobg(
+      id,
+      photoId,
+      nobgPhoto,
+      viewOwner ?? userId,
+      userId,
+    );
+    return reply.send({ ok: true });
+  }
+
   @Post(':id/archive')
   async archive(
     @Param('id', ParseIntPipe) id: number,

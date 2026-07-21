@@ -259,9 +259,14 @@
           Up / down
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Rotate
+          <input id="photoRotateInput" type="range" min="-180" max="180" step="1" value="0" class="range range-sm" />
+        </label>
         <div class="mt-auto border-t border-slate-800 pt-4">
           <div class="grid gap-2">
             <button type="button" id="photoEditorDelete" class="hidden rounded-lg border border-red-500/40 px-3 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
+            <button type="button" id="photoEditorMask" class="hidden rounded-lg border border-cyan-500/40 px-3 py-2 font-semibold text-cyan-200 hover:border-cyan-300 hover:bg-cyan-500/15 lg:block">Clean mask</button>
             <div class="grid grid-cols-3 gap-2">
               <button type="button" id="photoEditorCamera" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Camera</button>
               <button type="button" id="photoEditorChoose" class="rounded-lg border border-slate-600 px-3 py-2 font-semibold text-slate-100 hover:border-emerald-400 hover:bg-emerald-500/15">Gallery</button>
@@ -276,10 +281,36 @@
       </div>
     </div>
   </div>
+  <dialog id="maskEditorDialog" class="w-[min(92vw,980px)] rounded-lg border border-slate-700 bg-slate-950 p-0 text-slate-100 shadow-2xl shadow-black/60 backdrop:bg-slate-950/80">
+    <div class="grid max-h-[90vh] gap-4 overflow-y-auto p-4 lg:grid-cols-[1fr_260px]">
+      <div class="flex min-h-[420px] items-center justify-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900">
+        <canvas id="maskEditorCanvas" class="max-h-[76vh] max-w-full touch-none"></canvas>
+      </div>
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 class="text-xl font-semibold text-white">Clean up background</h2>
+          <p class="mt-1 text-sm text-slate-400">Erase bits you do not want, or restore parts that were removed.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="maskBrushErase" class="btn btn-outline border-slate-600 bg-slate-900/70 text-slate-100">Erase</button>
+          <button type="button" id="maskBrushRestore" class="btn btn-outline border-slate-600 bg-slate-900/70 text-slate-100">Restore</button>
+        </div>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Brush size
+          <input id="maskBrushSize" type="range" min="4" max="90" step="1" value="24" class="range range-sm" />
+        </label>
+        <div class="mt-auto grid grid-cols-2 gap-2">
+          <button type="button" id="maskEditorSkip" class="rounded-lg border border-slate-700 px-3 py-2 font-semibold text-slate-200 hover:border-slate-500 hover:bg-slate-800">Cancel</button>
+          <button type="button" id="maskEditorAccept" class="rounded-lg border border-emerald-600 bg-emerald-600 px-3 py-2 font-semibold text-white hover:border-emerald-500 hover:bg-emerald-500">Apply</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
   {{/if}}
 
   <script type="module">
     import { wireUpPhotoInput } from '/js/background-removal.js';
+    import { openMaskEditor } from '/js/mask-editor.js';
 
     const setEditing = (editing) => {
       for (const el of document.querySelectorAll('.view-mode')) {
@@ -588,11 +619,13 @@
     const zoomInput = document.getElementById('photoZoomInput');
     const xInput = document.getElementById('photoXInput');
     const yInput = document.getElementById('photoYInput');
+    const rotateInput = document.getElementById('photoRotateInput');
     const uploadInput = document.getElementById('photoInput');
     const photoIdInput = document.getElementById('photoIdInput');
     const uploadForm = document.getElementById('photoUploadForm');
     const mainGarmentPhoto = document.getElementById('mainGarmentPhoto');
     const photoDelete = document.getElementById('photoEditorDelete');
+    const photoMask = document.getElementById('photoEditorMask');
     const galleryPhotos = {{{json galleryPhotos}}};
     let activePhotoName = '{{#if garment.photo}}{{garment.photo.fileName}}{{/if}}';
     let activePhotoId = galleryPhotos[0]?.id ? String(galleryPhotos[0].id) : '';
@@ -601,6 +634,9 @@
     let photoObjectUrl = '';
     let photoDragging = false;
     let lastPointer = null;
+    const activePointers = new Map();
+    let pinchStartDistance = 0;
+    let pinchStartZoom = 1;
 
     const setPhotoStatus = (text) => {
       if (photoStatus) photoStatus.textContent = text;
@@ -609,6 +645,28 @@
       if (zoomInput) zoomInput.value = '1';
       if (xInput) xInput.value = '0';
       if (yInput) yInput.value = '0';
+      if (rotateInput) rotateInput.value = '0';
+      activePointers.clear();
+      photoDragging = false;
+      lastPointer = null;
+      pinchStartDistance = 0;
+    };
+    const drawImageToCanvas = (ctx, canvas, image) => {
+      const rotation = (parseFloat(rotateInput?.value || '0') * Math.PI) / 180;
+      const cos = Math.abs(Math.cos(rotation));
+      const sin = Math.abs(Math.sin(rotation));
+      const rotatedWidth = image.naturalWidth * cos + image.naturalHeight * sin;
+      const rotatedHeight = image.naturalWidth * sin + image.naturalHeight * cos;
+      const zoom = parseFloat(zoomInput?.value || '1');
+      const baseScale = Math.min(canvas.width / rotatedWidth, canvas.height / rotatedHeight);
+      const scale = baseScale * zoom;
+      const x = canvas.width / 2 + (parseFloat(xInput?.value || '0') / 100) * canvas.width * 0.4;
+      const y = canvas.height / 2 + (parseFloat(yInput?.value || '0') / 100) * canvas.height * 0.4;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.drawImage(image, (-image.naturalWidth * scale) / 2, (-image.naturalHeight * scale) / 2, image.naturalWidth * scale, image.naturalHeight * scale);
+      ctx.restore();
     };
     const drawPhotoPreview = () => {
       if (!photoCanvas || !photoImage) return;
@@ -619,14 +677,7 @@
       ctx.clearRect(0, 0, size, size);
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, size, size);
-      const zoom = parseFloat(zoomInput?.value || '1');
-      const baseScale = Math.min(size / photoImage.naturalWidth, size / photoImage.naturalHeight);
-      const scale = baseScale * zoom;
-      const width = photoImage.naturalWidth * scale;
-      const height = photoImage.naturalHeight * scale;
-      const x = (size - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * size * 0.4;
-      const y = (size - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * size * 0.4;
-      ctx.drawImage(photoImage, x, y, width, height);
+      drawImageToCanvas(ctx, photoCanvas, photoImage);
     };
     const loadPhotoBlob = async (blob) => {
       if (blob.type && !blob.type.startsWith('image/')) {
@@ -665,6 +716,15 @@
       if (photoSave) photoSave.disabled = true;
       resetPhotoControls();
     };
+    const squarePadBlob = async (blob) => {
+      const bitmap = await createImageBitmap(blob);
+      const size = Math.max(bitmap.width, bitmap.height);
+      const canvas = new OffscreenCanvas(size, size);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, Math.floor((size - bitmap.width) / 2), Math.floor((size - bitmap.height) / 2));
+      bitmap.close();
+      return canvas.convertToBlob({ type: 'image/png' });
+    };
     const selectGalleryPhoto = (index) => {
       if (!galleryPhotos.length) return;
       activePhotoIndex = (index + galleryPhotos.length) % galleryPhotos.length;
@@ -688,6 +748,7 @@
       if (photoId) activePhotoId = String(photoId);
       if (photoName) activePhotoName = photoName;
       if (photoDelete) photoDelete.classList.toggle('hidden', !photoId);
+      if (photoMask) photoMask.classList.toggle('hidden', !photoId);
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
       setPhotoStatus(existing ? 'Loading current photo...' : 'Choose camera, gallery, files, or drag a photo.');
@@ -708,14 +769,7 @@
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const zoom = parseFloat(zoomInput?.value || '1');
-      const baseScale = Math.min(canvas.width / photoImage.naturalWidth, canvas.height / photoImage.naturalHeight);
-      const scale = baseScale * zoom;
-      const width = photoImage.naturalWidth * scale;
-      const height = photoImage.naturalHeight * scale;
-      const x = (canvas.width - width) / 2 + (parseFloat(xInput?.value || '0') / 100) * canvas.width * 0.4;
-      const y = (canvas.height - height) / 2 + (parseFloat(yInput?.value || '0') / 100) * canvas.height * 0.4;
-      ctx.drawImage(photoImage, x, y, width, height);
+      drawImageToCanvas(ctx, canvas, photoImage);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
       return new File([blob], 'garment-photo.png', { type: 'image/png' });
     };
@@ -807,6 +861,37 @@
       await fetch(`/wardrobe/{{garment.id}}/photos/${activePhotoId}/delete{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}`, { method: 'POST' });
       window.location.reload();
     });
+    photoMask?.addEventListener('click', async () => {
+      if (!activePhotoId || !activePhotoName) return;
+      photoMask.disabled = true;
+      setPhotoStatus('Opening mask editor...');
+      try {
+        const [origResp, nobgResp] = await Promise.all([
+          fetch(`/file/${activePhotoName}`),
+          fetch(`/file/nobg/${activePhotoName}`),
+        ]);
+        const [origBlob, nobgBlob] = await Promise.all([origResp.blob(), nobgResp.blob()]);
+        const squareBlob = await squarePadBlob(origBlob);
+        const editedBlob = await openMaskEditor(new File([squareBlob], activePhotoName, { type: 'image/png' }), nobgBlob);
+        if (editedBlob === nobgBlob) {
+          setPhotoStatus('Mask unchanged.');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('nobgPhoto', new File([editedBlob], 'nobg.webp', { type: 'image/webp' }));
+        await fetch(`/wardrobe/{{garment.id}}/photos/${activePhotoId}/nobg{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}`, { method: 'POST', body: formData });
+        const objectUrl = URL.createObjectURL(editedBlob);
+        if (mainGarmentPhoto && activePhotoName) mainGarmentPhoto.src = objectUrl;
+        const thumbImg = document.querySelector(`[data-photo-id="${CSS.escape(activePhotoId)}"] img`);
+        if (thumbImg) thumbImg.src = objectUrl;
+        setPhotoStatus('Mask updated.');
+      } catch (err) {
+        console.warn('[mask-editor] Failed:', err);
+        setPhotoStatus('Could not update the mask.');
+      } finally {
+        photoMask.disabled = false;
+      }
+    });
     photoCamera?.addEventListener('click', () => photoCameraInput?.click());
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
     photoFiles?.addEventListener('click', () => photoFilesInput?.click());
@@ -829,7 +914,7 @@
       const file = photoFilesInput.files?.[0];
       if (file) await loadPhotoBlob(file);
     });
-    for (const input of [zoomInput, xInput, yInput]) {
+    for (const input of [zoomInput, xInput, yInput, rotateInput]) {
       input?.addEventListener('input', drawPhotoPreview);
     }
     photoDropZone?.addEventListener('dragover', (event) => {
@@ -845,11 +930,28 @@
     });
     photoCanvas?.addEventListener('pointerdown', (event) => {
       event.stopPropagation();
-      photoDragging = true;
-      lastPointer = { x: event.clientX, y: event.clientY };
+      activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (activePointers.size === 2) {
+        const points = [...activePointers.values()];
+        pinchStartDistance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        pinchStartZoom = parseFloat(zoomInput?.value || '1');
+        photoDragging = false;
+      } else {
+        photoDragging = true;
+        lastPointer = { x: event.clientX, y: event.clientY };
+      }
       photoCanvas.setPointerCapture(event.pointerId);
     });
     photoCanvas?.addEventListener('pointermove', (event) => {
+      if (activePointers.has(event.pointerId)) activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (activePointers.size === 2 && zoomInput && pinchStartDistance) {
+        event.preventDefault();
+        const points = [...activePointers.values()];
+        const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        zoomInput.value = String(Math.max(1, Math.min(3, pinchStartZoom * (distance / pinchStartDistance))));
+        drawPhotoPreview();
+        return;
+      }
       if (!photoDragging || !lastPointer || !xInput || !yInput) return;
       const dx = event.clientX - lastPointer.x;
       const dy = event.clientY - lastPointer.y;
@@ -858,10 +960,14 @@
       lastPointer = { x: event.clientX, y: event.clientY };
       drawPhotoPreview();
     });
-    photoCanvas?.addEventListener('pointerup', () => {
+    const endPointer = (event) => {
+      activePointers.delete(event.pointerId);
       photoDragging = false;
       lastPointer = null;
-    });
+      pinchStartDistance = 0;
+    };
+    photoCanvas?.addEventListener('pointerup', endPointer);
+    photoCanvas?.addEventListener('pointercancel', endPointer);
     photoCanvas?.addEventListener('wheel', (event) => {
       if (!zoomInput) return;
       event.preventDefault();

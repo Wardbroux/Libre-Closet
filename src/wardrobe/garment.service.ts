@@ -558,6 +558,24 @@ export class GarmentService {
     await this.streamNobgIfPresent(nobgPhoto, garment.photo.fileName);
   }
 
+  async updateGalleryPhotoNobg(
+    id: number,
+    photoId: number,
+    nobgPhoto: MultipartFile | undefined,
+    userId?: number,
+    requestingUserId?: number,
+  ): Promise<void> {
+    const garment = await this.findOne(id, requestingUserId, userId);
+    await garment.photos.init();
+    const galleryPhoto = garment.photos
+      .getItems()
+      .find((photo) => photo.id === photoId);
+    if (!galleryPhoto) throw new NotFoundException('Photo not found');
+    const file = (galleryPhoto.file as any).unwrap?.() ?? galleryPhoto.file;
+    if (!file?.fileName) return;
+    await this.streamNobgIfPresent(nobgPhoto, file.fileName);
+  }
+
   private streamNobgIfPresent(
     nobgPhoto: MultipartFile | undefined,
     photoFileName: string,
