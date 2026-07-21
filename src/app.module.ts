@@ -21,6 +21,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { ErrorViewFilter } from './error-view.filter';
 import { ViewContextModule } from './view-context/view-context.module';
+import { PinLockModule } from './pin-lock/pin-lock.module';
 
 @Module({
   imports: [
@@ -186,6 +187,7 @@ import { ViewContextModule } from './view-context/view-context.module';
     WardrobeModule,
     WardrobeShareModule,
     ViewContextModule,
+    PinLockModule,
   ],
   controllers: [AppController],
   providers: [

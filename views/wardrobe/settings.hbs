@@ -20,7 +20,7 @@
       </a>
     </div>
 
-    <section class="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
+    <section class="mb-5 rounded-lg border border-slate-800 bg-slate-900/70 p-5">
       <div class="mb-5">
         <h1 class="text-2xl font-bold text-white">Settings</h1>
         <p class="mt-1 text-sm text-slate-400">
@@ -54,6 +54,77 @@
         </div>
         {{/each}}
       </div>
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-900/70 p-5">
+      <div class="mb-5 flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold text-white">PIN lock</h2>
+          <p class="mt-1 text-sm text-slate-400">
+            {{#if pinConfigured}}Change the PIN used to unlock Libre Closet.{{else}}Add a PIN before installing this as a phone app.{{/if}}
+          </p>
+        </div>
+        {{#if pinConfigured}}
+        <form method="POST" action="/pin/lock">
+          <button class="btn btn-outline btn-sm border-slate-600 text-slate-100 hover:border-emerald-300 hover:bg-emerald-500/15">
+            Lock now
+          </button>
+        </form>
+        {{/if}}
+      </div>
+
+      {{#if pinError}}
+      <div class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{{pinError}}</div>
+      {{/if}}
+
+      <form method="POST" action="/wardrobe/settings/pin" class="grid gap-3">
+        {{#if pinConfigured}}
+        <label class="grid gap-2 text-sm text-slate-300">
+          Current PIN
+          <input
+            type="password"
+            name="currentPin"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="current-password"
+            class="input input-bordered border-slate-700 bg-slate-950"
+            required
+          />
+        </label>
+        {{/if}}
+        <label class="grid gap-2 text-sm text-slate-300">
+          {{#if pinConfigured}}New PIN{{else}}PIN{{/if}}
+          <input
+            type="password"
+            name="newPin"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            minlength="4"
+            maxlength="8"
+            autocomplete="new-password"
+            placeholder="4 to 8 numbers"
+            class="input input-bordered border-slate-700 bg-slate-950"
+            required
+          />
+        </label>
+        <label class="grid gap-2 text-sm text-slate-300">
+          Confirm PIN
+          <input
+            type="password"
+            name="confirmPin"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            minlength="4"
+            maxlength="8"
+            autocomplete="new-password"
+            class="input input-bordered border-slate-700 bg-slate-950"
+            required
+          />
+        </label>
+        <button class="btn mt-2 border-0 bg-emerald-600 text-white hover:bg-emerald-500">
+          {{#if pinConfigured}}Change PIN{{else}}Set PIN{{/if}}
+        </button>
+      </form>
     </section>
   </div>
 </main>

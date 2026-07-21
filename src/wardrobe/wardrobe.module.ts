@@ -9,6 +9,7 @@ import { WardrobeLocation } from '../dal/entity/wardrobe-location.entity';
 import { FileModule } from '../file/file.module';
 import { AuthModule } from '../auth/auth.module';
 import { WardrobeShareModule } from '../wardrobe-share/wardrobe-share.module';
+import { PinLockModule } from '../pin-lock/pin-lock.module';
 import { GarmentService } from './garment.service';
 import { OutfitService } from './outfit.service';
 import { CalendarService } from './calendar.service';
@@ -19,6 +20,7 @@ import { WardrobeController } from './wardrobe.controller';
     AuthModule,
     FileModule,
     WardrobeShareModule,
+    PinLockModule,
     MikroOrmModule.forFeature([
       Garment,
       GarmentPhoto,

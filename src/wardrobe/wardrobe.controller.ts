@@ -27,6 +27,7 @@ import { GarmentColor } from './garment-color.enum';
 import { GarmentService } from './garment.service';
 import { WardrobeShareService } from '../wardrobe-share/wardrobe-share.service';
 import { SharePermission } from '../dal/entity/wardrobe-share.entity';
+import { PinLockService } from '../pin-lock/pin-lock.service';
 import type { SearchGarmentDto } from './dto/search-garment.dto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -51,6 +52,7 @@ export class WardrobeController {
   constructor(
     private readonly garmentService: GarmentService,
     private readonly shareService: WardrobeShareService,
+    private readonly pinLockService: PinLockService,
   ) {}
 
   private userId(req: any): number | undefined {
@@ -304,7 +306,55 @@ export class WardrobeController {
     const filters = await this.garmentService.findAvailableFilters(userId);
     return {
       locations: filters.locations,
+      pinConfigured: await this.pinLockService.isConfigured(),
     };
+  }
+
+  @Post('settings/pin')
+  async updatePin(
+    @Body() body: { currentPin?: string; newPin?: string; confirmPin?: string },
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ) {
+    const userId = this.userId(req);
+    const pinConfigured = await this.pinLockService.isConfigured();
+    const currentPin = String(body.currentPin ?? '').trim();
+    const newPin = String(body.newPin ?? '').trim();
+    const confirmPin = String(body.confirmPin ?? '').trim();
+
+    const renderSettings = async (pinError: string) => {
+      const filters = await this.garmentService.findAvailableFilters(userId);
+      return reply.view('wardrobe/settings', {
+        layout: 'layout',
+        locations: filters.locations,
+        pinConfigured,
+        pinError,
+        ...((reply as any).locals ?? {}),
+      });
+    };
+
+    if (!/^\d{4,8}$/.test(newPin)) {
+      return renderSettings('PIN must be 4 to 8 numbers.');
+    }
+    if (newPin !== confirmPin) {
+      return renderSettings('New PINs do not match.');
+    }
+    if (pinConfigured && !(await this.pinLockService.verifyPin(currentPin))) {
+      return renderSettings('Current PIN is incorrect.');
+    }
+
+    await this.pinLockService.setPin(newPin);
+    reply.setCookie(
+      'wardrobe_pin_unlock',
+      await this.pinLockService.unlockToken(),
+      {
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+        httpOnly: true,
+        sameSite: 'lax',
+      },
+    );
+    return reply.redirect('/wardrobe/settings', 302);
   }
 
   @Post('settings/locations')

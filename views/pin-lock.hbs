@@ -1,0 +1,38 @@
+<main class="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-8 text-slate-100">
+  <section class="w-full max-w-sm rounded-xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-black/40">
+    <div class="mb-6 text-center">
+      <div class="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-7">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V7.5a4.5 4.5 0 0 0-9 0v3m-.75 0h10.5A1.5 1.5 0 0 1 18.75 12v6.75a1.5 1.5 0 0 1-1.5 1.5H6.75a1.5 1.5 0 0 1-1.5-1.5V12a1.5 1.5 0 0 1 1.5-1.5Z" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-white">Unlock Libre Closet</h1>
+      <p class="mt-2 text-sm text-slate-400">Enter your wardrobe PIN.</p>
+    </div>
+
+    {{#if error}}
+    <div class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">{{error}}</div>
+    {{/if}}
+
+    {{#if pinConfigured}}
+    <form method="POST" action="/pin" class="grid gap-4">
+      <input
+        name="pin"
+        type="password"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        autocomplete="current-password"
+        autofocus
+        placeholder="PIN"
+        class="input input-bordered w-full border-slate-700 bg-slate-950 text-center text-2xl tracking-[0.6em] text-white"
+      />
+      <button class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500">Unlock</button>
+    </form>
+    {{else}}
+    <div class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+      No PIN is set yet. Open Settings and create one.
+    </div>
+    <a href="/wardrobe/settings" class="btn mt-4 w-full border-0 bg-emerald-600 text-white hover:bg-emerald-500">Open settings</a>
+    {{/if}}
+  </section>
+</main>

@@ -14,6 +14,7 @@ import { AppModule } from './app.module';
 import { Logger } from 'nestjs-pino';
 import { ViewContextService } from './view-context/view-context.service';
 import { GarmentColor } from './wardrobe/garment-color.enum';
+import { PinLockService } from './pin-lock/pin-lock.service';
 
 async function bootstrap() {
   // https://docs.nestjs.com/security/rate-limiting#proxies
@@ -53,6 +54,38 @@ async function bootstrap() {
   });
 
   await app.register(fastifyCookie);
+  const pinLockService = app.get(PinLockService);
+  fastify.addHook('preHandler', async (request, reply) => {
+    const path = request.url.split('?')[0];
+    const publicPrefixes = [
+      '/pin',
+      '/assets/',
+      '/modules/',
+      '/js/',
+      '/bg-removal-models/',
+    ];
+    const publicPaths = new Set([
+      '/favicon.ico',
+      '/manifest.json',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/sw.js',
+      '/bundle.css',
+      '/offline.html',
+    ]);
+    if (
+      publicPaths.has(path) ||
+      publicPrefixes.some((prefix) => path.startsWith(prefix))
+    ) {
+      return;
+    }
+    const token = (request.cookies as Record<string, string> | undefined)?.[
+      'wardrobe_pin_unlock'
+    ];
+    if (!(await pinLockService.isUnlocked(token))) {
+      return reply.redirect('/pin', 302);
+    }
+  });
   // https://docs.nestjs.com/techniques/compression
   await app.register(fastifyCompress);
   await app.register(fastifyMultipart, {
