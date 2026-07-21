@@ -769,6 +769,10 @@
       photoModal?.classList.add('hidden');
       photoModal?.classList.remove('flex');
     };
+    photoModal?.addEventListener('click', (event) => {
+      if (event.target !== photoModal) return;
+      closePhotoModal();
+    });
     const exportPhotoFile = async ({ transparent = false } = {}) => {
       if (!photoImage) return null;
       const canvas = document.createElement('canvas');
