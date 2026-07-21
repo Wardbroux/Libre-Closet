@@ -80,7 +80,7 @@
 
       <div class="flex flex-col gap-5">
         <div>
-          <div class="view-mode mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
+          <div id="detailCategoryBadge" class="view-mode mb-4 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200">
             {{categoryLabel}}
           </div>
           <h1 class="view-mode text-3xl font-bold tracking-normal text-white">
@@ -265,6 +265,8 @@
       for (const el of document.querySelectorAll('.optional-detail-row')) {
         el.classList.toggle('hidden', !editing && el.dataset.hasValue !== 'true');
       }
+      const detailCategoryBadge = document.getElementById('detailCategoryBadge');
+      if (detailCategoryBadge) detailCategoryBadge.style.display = editing ? 'none' : 'inline-flex';
       const toggle = document.getElementById('editItemToggle');
       if (toggle) toggle.classList.toggle('hidden', editing);
       document.body.dataset.itemEditing = editing ? 'true' : 'false';
