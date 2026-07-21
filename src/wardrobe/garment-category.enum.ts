@@ -177,12 +177,20 @@ export const TOP_LEVEL_CATEGORIES = [
 
 export const SIZE_GROUPS = [
   {
-    label: "Men's sizes",
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL', '6XL'],
-  },
-  {
-    label: "Women's sizes",
-    sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'],
+    label: 'Clothing sizes',
+    sizes: [
+      'XXS',
+      'XS',
+      'S',
+      'M',
+      'L',
+      'XL',
+      'XXL',
+      'XXXL',
+      '4XL',
+      '5XL',
+      '6XL',
+    ],
   },
   {
     label: 'Shoe sizes',

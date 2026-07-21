@@ -334,7 +334,9 @@
       const wantsShoes = categoryInput.value.startsWith('Shoes');
       for (const group of sizeSelect.querySelectorAll('optgroup')) {
         const isShoeGroup = group.dataset.sizeKind === 'shoes';
-        group.hidden = wantsShoes ? !isShoeGroup : isShoeGroup;
+        const shouldHide = wantsShoes ? !isShoeGroup : isShoeGroup;
+        group.hidden = shouldHide;
+        group.style.display = shouldHide ? 'none' : '';
         for (const option of group.querySelectorAll('option')) {
           option.disabled = group.hidden;
         }
