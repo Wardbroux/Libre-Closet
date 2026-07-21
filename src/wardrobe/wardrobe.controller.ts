@@ -37,6 +37,12 @@ type CategoryOption = {
   hasChildren: boolean;
 };
 
+type CategoryTreeNode = {
+  label: string;
+  value: string;
+  children: CategoryTreeNode[];
+};
+
 @UseGuards(ConditionalAuthGuard)
 @Controller('wardrobe')
 export class WardrobeController {
@@ -309,6 +315,7 @@ export class WardrobeController {
       categories,
       categoryGroups: this.categoryGroups(filters.categories),
       categoryPaths: this.categoryPaths(filters.categories),
+      categoryTree: this.editCategoryTree(filters.categories),
       availableLocations: filters.locations,
       availableTags: filters.tags,
       sizeGroups: this.editSizeGroups(),
@@ -725,6 +732,83 @@ export class WardrobeController {
         ...categories.map((category) => this.canonicalCategory(category)),
       ]),
     ].filter(Boolean);
+  }
+
+  private editCategoryTree(categories: string[]): CategoryTreeNode[] {
+    const paths = this.categoryPaths(categories);
+    const roots = [
+      { label: 'Clothing', value: 'Clothing' },
+      { label: 'Shoes', value: 'Shoes' },
+      { label: 'Bags', value: 'Bags' },
+      { label: 'Accessories', value: 'Accessories' },
+      { label: 'Other', value: 'Other' },
+    ];
+
+    return roots.map((root) => this.categoryTreeNode(root, paths));
+  }
+
+  private categoryTreeNode(
+    node: { label: string; value: string },
+    paths: string[],
+  ): CategoryTreeNode {
+    return {
+      ...node,
+      children: this.categoryTreeChildren(node.value, paths).map((child) =>
+        this.categoryTreeNode(child, paths),
+      ),
+    };
+  }
+
+  private categoryTreeChildren(
+    parent: string,
+    paths: string[],
+  ): { label: string; value: string }[] {
+    const options = new Map<string, string>();
+    const standaloneRoots = new Set([
+      'Accessories',
+      'Bags',
+      'Clothing',
+      'Other',
+      'Shoes',
+    ]);
+
+    if (parent === 'Clothing') {
+      for (const path of paths) {
+        const [root] = path
+          .split('>')
+          .map((part) => part.trim())
+          .filter(Boolean);
+        if (!root || standaloneRoots.has(root)) continue;
+        options.set(root, root);
+      }
+      return [...options.entries()].map(([value, label]) => ({
+        label,
+        value,
+      }));
+    }
+
+    const parentParts = parent
+      .split('>')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    for (const path of paths) {
+      const parts = path
+        .split('>')
+        .map((part) => part.trim())
+        .filter(Boolean);
+      if (parts.length <= parentParts.length) continue;
+      const matchesParent = parentParts.every(
+        (part, index) => parts[index] === part,
+      );
+      if (!matchesParent) continue;
+      const childParts = parts.slice(0, parentParts.length + 1);
+      const value = childParts.join(' > ');
+      const label = childParts.at(-1);
+      if (label) options.set(value, label);
+    }
+
+    return [...options.entries()].map(([value, label]) => ({ label, value }));
   }
 
   private filterChips(query: SearchGarmentDto, viewOwner?: number) {

@@ -207,7 +207,7 @@
     document.getElementById('editItemToggle')?.addEventListener('click', () => setEditing(true));
     document.getElementById('cancelEditItem')?.addEventListener('click', () => setEditing(false));
 
-    const categoryPaths = {{{json categoryPaths}}};
+    const categoryTree = {{{json categoryTree}}};
     const categoryInput = document.getElementById('categoryValueInput');
     const categoryButton = document.getElementById('categoryPickerButton');
     const categoryLabel = document.getElementById('categoryPickerLabel');
@@ -217,36 +217,19 @@
     const sizeSelect = document.querySelector('select[name="size"]');
 
     const pathParts = (path) => path.split('>').map((part) => part.trim()).filter(Boolean);
-    const clothingRoots = new Set();
-    const categoryChildren = new Map();
-    const addChild = (parent, child) => {
-      if (!categoryChildren.has(parent)) categoryChildren.set(parent, []);
-      const children = categoryChildren.get(parent);
-      if (!children.includes(child)) children.push(child);
+    const findCategoryNode = (nodes, value) => {
+      for (const node of nodes) {
+        if (node.value === value) return node;
+        const child = findCategoryNode(node.children || [], value);
+        if (child) return child;
+      }
+      return null;
     };
-
-    addChild('', 'Clothing');
-    addChild('', 'Shoes');
-    addChild('', 'Bags');
-    addChild('', 'Accessories');
-    addChild('', 'Other');
-
-    for (const path of categoryPaths) {
-      const parts = pathParts(path);
-      if (!parts.length) continue;
-      const root = parts[0];
-      if (!['Accessories', 'Bags', 'Other', 'Shoes'].includes(root)) {
-        clothingRoots.add(root);
-      }
-      for (let index = 1; index < parts.length; index += 1) {
-        const parent = parts.slice(0, index).join(' > ');
-        addChild(parent, parts[index]);
-      }
-    }
-    for (const root of clothingRoots) addChild('Clothing', root);
-
-    const childLabels = (parent) => categoryChildren.get(parent) || [];
-    const hasCategoryChildren = (path) => childLabels(path).length > 0;
+    const childNodes = (parent = '') => {
+      if (!parent) return categoryTree;
+      return findCategoryNode(categoryTree, parent)?.children || [];
+    };
+    const hasCategoryChildren = (path) => childNodes(path).length > 0;
     const syncCategoryLabel = () => {
       if (!categoryLabel || !categoryInput) return;
       categoryLabel.textContent = categoryInput.value || 'Category';
@@ -292,8 +275,8 @@
         categoryBreadcrumbs.appendChild(button);
       });
 
-      for (const label of childLabels(parent)) {
-        const value = parent === 'Clothing' ? label : parent ? `${parent} > ${label}` : label;
+      for (const option of childNodes(parent)) {
+        const { label, value } = option;
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200';
