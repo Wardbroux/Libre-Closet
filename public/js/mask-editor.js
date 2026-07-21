@@ -8,6 +8,8 @@
 export function openMaskEditor(originalFile, nobgBlob) {
   return new Promise((resolve) => {
     const dialog = document.getElementById('maskEditorDialog');
+    const viewport = document.getElementById('maskEditorViewport');
+    const stage = document.getElementById('maskEditorStage');
     const canvas = document.getElementById('maskEditorCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -19,6 +21,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
     let brushRadius = 20;
     let painting = false;
     let zoom = 1;
+    let baseDisplayScale = 1;
 
     // --- Load both images ---
     const nobgUrl = URL.createObjectURL(nobgBlob);
@@ -44,7 +47,9 @@ export function openMaskEditor(originalFile, nobgBlob) {
       // Draw no-bg result onto the visible canvas.
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(nobgImg, 0, 0);
+      fitCanvasToViewport();
       applyZoom();
+      centerCanvas();
 
       URL.revokeObjectURL(nobgUrl);
       URL.revokeObjectURL(origUrl);
@@ -94,8 +99,33 @@ export function openMaskEditor(originalFile, nobgBlob) {
     const applyZoom = () => {
       canvas.style.maxWidth = 'none';
       canvas.style.maxHeight = 'none';
-      canvas.style.width = `${canvas.width * zoom}px`;
-      canvas.style.height = `${canvas.height * zoom}px`;
+      canvas.style.width = `${canvas.width * baseDisplayScale * zoom}px`;
+      canvas.style.height = `${canvas.height * baseDisplayScale * zoom}px`;
+      if (viewport && stage) {
+        const xPad = Math.round(viewport.clientWidth / 2);
+        const yPad = Math.round(viewport.clientHeight / 2);
+        stage.style.padding = `${yPad}px ${xPad}px`;
+      }
+    };
+
+    const fitCanvasToViewport = () => {
+      if (!viewport || !canvas.width || !canvas.height) {
+        baseDisplayScale = 1;
+        return;
+      }
+      const availableWidth = Math.max(1, viewport.clientWidth - 24);
+      const availableHeight = Math.max(1, viewport.clientHeight - 24);
+      baseDisplayScale = Math.min(
+        1,
+        availableWidth / canvas.width,
+        availableHeight / canvas.height,
+      );
+    };
+
+    const centerCanvas = () => {
+      if (!viewport) return;
+      viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+      viewport.scrollTop = Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 2);
     };
 
     // --- Mouse events ---
@@ -104,8 +134,17 @@ export function openMaskEditor(originalFile, nobgBlob) {
     const onMouseUp = () => { painting = false; };
     const onWheel = (e) => {
       e.preventDefault();
+      e.stopPropagation();
+      const before = canvas.getBoundingClientRect();
+      const anchorX = Math.max(0, Math.min(1, (e.clientX - before.left) / Math.max(1, before.width)));
+      const anchorY = Math.max(0, Math.min(1, (e.clientY - before.top) / Math.max(1, before.height)));
       zoom = Math.max(0.5, Math.min(6, zoom + (e.deltaY < 0 ? 0.18 : -0.18)));
       applyZoom();
+      if (viewport) {
+        const after = canvas.getBoundingClientRect();
+        viewport.scrollLeft += after.left + (anchorX * after.width) - e.clientX;
+        viewport.scrollTop += after.top + (anchorY * after.height) - e.clientY;
+      }
     };
 
     // --- Touch events ---
@@ -122,7 +161,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
 
     canvas.addEventListener('mousedown', onMouseDown);
     canvas.addEventListener('mousemove', onMouseMove);
-    canvas.addEventListener('wheel', onWheel, { passive: false });
+    viewport?.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('mouseup', onMouseUp);
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -163,7 +202,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
     const cleanup = () => {
       canvas.removeEventListener('mousedown', onMouseDown);
       canvas.removeEventListener('mousemove', onMouseMove);
-      canvas.removeEventListener('wheel', onWheel);
+      viewport?.removeEventListener('wheel', onWheel);
       window.removeEventListener('mouseup', onMouseUp);
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove', onTouchMove);
@@ -177,6 +216,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
       canvas.style.height = '';
       canvas.style.maxWidth = '';
       canvas.style.maxHeight = '';
+      if (stage) stage.style.padding = '';
       dialog.close();
     };
 
