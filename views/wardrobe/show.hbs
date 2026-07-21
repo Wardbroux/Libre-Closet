@@ -97,13 +97,13 @@
             <div class="view-mode flex flex-wrap items-center justify-end gap-2 text-emerald-200">
               {{#each (splitCategoryPath garment.category)}}<span>{{this}}</span>{{#unless @last}}<span class="text-slate-500">></span>{{/unless}}{{/each}}
             </div>
-            <div class="edit-mode hidden w-full max-w-xs justify-self-end">
+            <div class="edit-mode relative hidden w-full max-w-xs justify-self-end">
               <input type="hidden" name="category" id="categoryValueInput" value="{{garment.category}}" required />
               <button type="button" id="categoryPickerButton" class="flex w-full items-center justify-between rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left font-medium text-white outline-none hover:border-emerald-400">
                 <span id="categoryPickerLabel">{{garment.category}}</span>
                 <span class="text-slate-400">></span>
               </button>
-              <div id="categoryPickerPanel" class="mt-2 hidden rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
+              <div id="categoryPickerPanel" class="absolute right-0 top-full z-40 mt-2 hidden w-full rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
                 <div id="categoryBreadcrumbs" class="mb-2 flex flex-wrap gap-2 border-b border-slate-800 pb-2 text-xs text-slate-400"></div>
                 <div id="categoryPickerOptions" class="max-h-72 overflow-y-auto"></div>
               </div>
@@ -241,6 +241,10 @@
       if (!categoryLabel || !categoryInput) return;
       categoryLabel.textContent = categoryInput.value || 'Category';
     };
+    const setBrowsingCategoryLabel = (value) => {
+      if (!categoryLabel || !value) return;
+      categoryLabel.textContent = value;
+    };
     const syncSizeOptions = () => {
       if (!sizeSelect || !categoryInput) return;
       const wantsShoes = categoryInput.value.startsWith('Shoes');
@@ -256,6 +260,7 @@
     };
     const renderCategoryPicker = (parent = '') => {
       if (!categoryOptions || !categoryBreadcrumbs) return;
+      setBrowsingCategoryLabel(parent || categoryInput?.value || 'Category');
       categoryOptions.innerHTML = '';
       categoryBreadcrumbs.innerHTML = '';
 
@@ -289,11 +294,14 @@
         arrowSpan.textContent = hasCategoryChildren(value) ? '>' : '';
         button.append(labelSpan, arrowSpan);
         button.addEventListener('click', () => {
+          if (hasCategoryChildren(value)) {
+            renderCategoryPicker(value);
+            return;
+          }
           categoryInput.value = value;
           syncCategoryLabel();
           syncSizeOptions();
-          if (hasCategoryChildren(value)) renderCategoryPicker(value);
-          else categoryPanel?.classList.add('hidden');
+          categoryPanel?.classList.add('hidden');
         });
         categoryOptions.appendChild(button);
       }
@@ -307,6 +315,7 @@
       if (!categoryPanel || categoryPanel.classList.contains('hidden')) return;
       if (event.target.closest('#categoryPickerButton') || event.target.closest('#categoryPickerPanel')) return;
       categoryPanel.classList.add('hidden');
+      syncCategoryLabel();
     });
     syncCategoryLabel();
     syncSizeOptions();
