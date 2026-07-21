@@ -238,9 +238,9 @@
           </div>
           <canvas id="photoEditorCanvas" class="hidden max-h-[68vh] max-w-full touch-none rounded-md"></canvas>
         </div>
-        <input id="photoEditorFileInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+        <input id="photoEditorFileInput" type="file" class="hidden" accept="image/*" />
         <input id="photoEditorCameraInput" type="file" class="hidden" accept="image/*" capture="environment" />
-        <input id="photoEditorFilesInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+        <input id="photoEditorFilesInput" type="file" class="hidden" />
       </div>
       <div class="flex flex-col gap-4">
         <div>
@@ -629,6 +629,10 @@
       ctx.drawImage(photoImage, x, y, width, height);
     };
     const loadPhotoBlob = async (blob) => {
+      if (blob.type && !blob.type.startsWith('image/')) {
+        setPhotoStatus('Please choose an image file.');
+        return;
+      }
       if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
       photoObjectUrl = URL.createObjectURL(blob);
       photoImage = new Image();
