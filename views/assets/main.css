@@ -463,14 +463,19 @@ body {
     display: none;
   }
 
-  .dashboard-filters {
+  .dashboard-filter-row {
     order: 4;
+    display: block;
+    margin-bottom: 0.65rem;
+  }
+
+  .dashboard-filters {
     flex-wrap: nowrap;
     display: grid;
     grid-template-columns: 1fr 0.72fr 0.9fr 0.8fr;
     gap: 0.45rem;
     margin-inline: 0;
-    margin-bottom: 0.65rem;
+    margin-bottom: 0;
     padding-inline: 0;
     overflow: visible;
   }

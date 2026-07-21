@@ -81,19 +81,13 @@
     {{/each}}
   </nav>
 
-  <div class="dashboard-scale mb-5 flex justify-end">
-    <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-300">
-      <span class="whitespace-nowrap">Card size</span>
-      <input id="wardrobeCardScale" type="range" min="180" max="620" step="20" value="320" class="range range-xs w-40" />
-    </label>
-  </div>
-
-  <form method="get" action="/wardrobe" id="filter-form" class="dashboard-filters mb-5 flex flex-wrap items-start gap-3">
-    {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
-    <input type="hidden" name="keyword" value="{{search.keyword}}">
-    <input type="hidden" name="category" value="{{search.category}}">
-    <input type="hidden" name="location" value="{{search.location}}">
-    <input type="hidden" name="size" value="{{search.size}}">
+  <div class="dashboard-filter-row mb-5 flex flex-wrap items-start justify-between gap-3">
+    <form method="get" action="/wardrobe" id="filter-form" class="dashboard-filters flex flex-wrap items-start gap-3">
+      {{#if viewOwner}}<input type="hidden" name="ownerId" value="{{viewOwner}}">{{/if}}
+      <input type="hidden" name="keyword" value="{{search.keyword}}">
+      <input type="hidden" name="category" value="{{search.category}}">
+      <input type="hidden" name="location" value="{{search.location}}">
+      <input type="hidden" name="size" value="{{search.size}}">
 
     <details class="dropdown">
       <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">
@@ -156,6 +150,14 @@
       {{/each}}
     </select>
   </form>
+
+    <div class="dashboard-scale flex justify-end">
+      <label class="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2 text-sm text-slate-300">
+        <span class="whitespace-nowrap">Card size</span>
+        <input id="wardrobeCardScale" type="range" min="180" max="620" step="20" value="320" class="range range-xs w-40" />
+      </label>
+    </div>
+  </div>
 
   {{#if filterChips.length}}
   <div class="mb-5 flex flex-wrap items-center gap-3">
