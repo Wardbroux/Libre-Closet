@@ -18,6 +18,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
     let brushMode = 'erase'; // 'erase' | 'restore'
     let brushRadius = 20;
     let painting = false;
+    let zoom = 1;
 
     // --- Load both images ---
     const nobgUrl = URL.createObjectURL(nobgBlob);
@@ -43,6 +44,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
       // Draw no-bg result onto the visible canvas.
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(nobgImg, 0, 0);
+      applyZoom();
 
       URL.revokeObjectURL(nobgUrl);
       URL.revokeObjectURL(origUrl);
@@ -89,10 +91,22 @@ export function openMaskEditor(originalFile, nobgBlob) {
       }
     };
 
+    const applyZoom = () => {
+      canvas.style.maxWidth = 'none';
+      canvas.style.maxHeight = 'none';
+      canvas.style.width = `${canvas.width * zoom}px`;
+      canvas.style.height = `${canvas.height * zoom}px`;
+    };
+
     // --- Mouse events ---
     const onMouseDown = (e) => { painting = true; paint(e.clientX, e.clientY); };
     const onMouseMove = (e) => { if (painting) paint(e.clientX, e.clientY); };
     const onMouseUp = () => { painting = false; };
+    const onWheel = (e) => {
+      e.preventDefault();
+      zoom = Math.max(0.5, Math.min(6, zoom + (e.deltaY < 0 ? 0.18 : -0.18)));
+      applyZoom();
+    };
 
     // --- Touch events ---
     const onTouchStart = (e) => {
@@ -108,6 +122,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
 
     canvas.addEventListener('mousedown', onMouseDown);
     canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('mouseup', onMouseUp);
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove', onTouchMove, { passive: false });
@@ -148,6 +163,7 @@ export function openMaskEditor(originalFile, nobgBlob) {
     const cleanup = () => {
       canvas.removeEventListener('mousedown', onMouseDown);
       canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('mouseup', onMouseUp);
       canvas.removeEventListener('touchstart', onTouchStart);
       canvas.removeEventListener('touchmove', onTouchMove);
@@ -157,6 +173,10 @@ export function openMaskEditor(originalFile, nobgBlob) {
       sizeInput.removeEventListener('input', onSizeChange);
       acceptBtn.removeEventListener('click', onAccept);
       skipBtn.removeEventListener('click', onSkip);
+      canvas.style.width = '';
+      canvas.style.height = '';
+      canvas.style.maxWidth = '';
+      canvas.style.maxHeight = '';
       dialog.close();
     };
 
