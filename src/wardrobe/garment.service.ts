@@ -70,24 +70,27 @@ export class GarmentService {
   ): Promise<Garment[]> {
     const normalizedSize = this.normalizeSize(dto.size);
     const categoryFilter = this.categoryFilter(dto.category);
+    const colorFilter = this.colorFilter(dto.color);
+    const keywordFilter: FilterQuery<Garment> | undefined = dto.keyword
+      ? {
+          $or: [
+            { name: { $like: `%${dto.keyword}%` } },
+            { notes: { $like: `%${dto.keyword}%` } },
+            { brand: { $like: `%${dto.keyword}%` } },
+            { location: { $like: `%${dto.keyword}%` } },
+            { tags: { $like: `%${dto.keyword}%` } },
+          ],
+        }
+      : undefined;
+    const andFilters = [categoryFilter, colorFilter, keywordFilter].filter(
+      Boolean,
+    ) as FilterQuery<Garment>[];
     const searchConditions: FilterQuery<Garment> = {
-      ...(categoryFilter ? categoryFilter : {}),
-      ...(dto.color ? { color: dto.color } : {}),
+      ...(andFilters.length ? { $and: andFilters } : {}),
       ...(normalizedSize ? { size: normalizedSize } : {}),
       ...(dto.location ? { location: dto.location } : {}),
       ...(dto.tag ? { tags: { $like: `%${dto.tag}%` } } : {}),
       ...(dto.archived !== 'true' ? { archived: false } : {}),
-      ...(dto.keyword
-        ? {
-            $or: [
-              { name: { $like: `%${dto.keyword}%` } },
-              { notes: { $like: `%${dto.keyword}%` } },
-              { brand: { $like: `%${dto.keyword}%` } },
-              { location: { $like: `%${dto.keyword}%` } },
-              { tags: { $like: `%${dto.keyword}%` } },
-            ],
-          }
-        : {}),
     };
 
     if (userId != null) {
@@ -716,6 +719,26 @@ export class GarmentService {
     }
     return {
       $or: [{ category: value }, { category: { $like: `${value} >%` } }],
+    };
+  }
+
+  private colorFilter(color?: string): FilterQuery<Garment> | undefined {
+    const values = (color || '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (!values.length) return undefined;
+    return {
+      $or: values.flatMap((value) => [
+        { color: value },
+        { color: { $like: `${value},%` } },
+        { color: { $like: `%,${value}` } },
+        { color: { $like: `%, ${value}` } },
+        { color: { $like: `%,${value},%` } },
+        { color: { $like: `%, ${value},%` } },
+        { color: { $like: `%,${value}, %` } },
+        { color: { $like: `%, ${value}, %` } },
+      ]),
     };
   }
 

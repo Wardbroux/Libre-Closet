@@ -115,13 +115,24 @@
       </div>
     </details>
 
-    <select name="color" class="select select-bordered w-36 border-slate-700 bg-slate-900" onchange="this.form.submit()">
-      <option value="" {{#unless search.color}}selected{{/unless}} hidden>Colour</option>
-      <option value="">None</option>
-      {{#each colors}}
-      <option value="{{this}}" {{#ifEquals this ../search.color}}selected{{/ifEquals}}>{{this}}</option>
-      {{/each}}
-    </select>
+    <details class="dropdown dashboard-color-filter">
+      <summary class="btn min-w-36 justify-between border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">
+        <span>{{#if activeColors.length}}{{join activeColors ', '}}{{else}}Colour{{/if}}</span>
+        <span class="text-slate-500">v</span>
+      </summary>
+      <div class="dropdown-content z-30 mt-2 max-h-96 w-56 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-2 shadow-xl">
+        <a href="{{colorNoneHref}}" class="mb-1 flex items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200">
+          <span>None</span>
+          {{#unless activeColors.length}}<span class="text-emerald-300">selected</span>{{/unless}}
+        </a>
+        {{#each dashboardColors}}
+        <a href="{{this.href}}" class="flex items-center justify-between rounded-md px-3 py-2 text-left text-sm {{#if this.active}}bg-emerald-500/15 text-emerald-100{{else}}text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200{{/if}}">
+          <span class="inline-flex items-center gap-2"><span class="size-3 rounded-full border border-white/40" style="{{colorDotStyle this.label}}"></span>{{this.label}}</span>
+          {{#if this.active}}<span class="text-emerald-300">selected</span>{{/if}}
+        </a>
+        {{/each}}
+      </div>
+    </details>
     <select name="tag" class="select select-bordered w-36 border-slate-700 bg-slate-900" onchange="this.form.submit()">
       <option value="" {{#unless search.tag}}selected{{/unless}} hidden>Tags</option>
       <option value="">None</option>

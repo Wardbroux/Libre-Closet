@@ -136,9 +136,12 @@ export class WardrobeController {
         ),
       })),
       colors: Object.values(GarmentColor),
+      dashboardColors: this.dashboardColors(query, viewOwner),
+      activeColors: this.parseColorFilter(query.color),
       sizeGroups: SIZE_GROUPS,
       dashboardSizeGroups: this.sizeFilterGroups(query, viewOwner),
       sizeNoneHref: this.wardrobeUrl(query, { size: undefined }, viewOwner),
+      colorNoneHref: this.wardrobeUrl(query, { color: undefined }, viewOwner),
       availableSizes: filters.sizes,
       availableLocations: filters.locations,
       allLocationsHref: this.wardrobeUrl(
@@ -1035,10 +1038,21 @@ export class WardrobeController {
       });
     }
     if (query.color) {
-      chips.push({
-        label: query.color,
-        href: this.wardrobeUrl(query, { color: undefined }, viewOwner),
-      });
+      const colors = this.parseColorFilter(query.color);
+      for (const color of colors) {
+        chips.push({
+          label: color,
+          href: this.wardrobeUrl(
+            query,
+            {
+              color:
+                colors.filter((selected) => selected !== color).join(', ') ||
+                undefined,
+            },
+            viewOwner,
+          ),
+        });
+      }
     }
     if (query.tag) {
       chips.push({
@@ -1149,6 +1163,31 @@ export class WardrobeController {
         active: query.size === size,
       })),
     }));
+  }
+
+  private parseColorFilter(color?: string): string[] {
+    return (color || '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+
+  private dashboardColors(query: SearchGarmentDto, viewOwner?: number) {
+    const selected = this.parseColorFilter(query.color);
+    return Object.values(GarmentColor).map((color) => {
+      const next = selected.includes(color)
+        ? selected.filter((value) => value !== color)
+        : [...selected, color];
+      return {
+        label: color,
+        active: selected.includes(color),
+        href: this.wardrobeUrl(
+          query,
+          { color: next.length ? next.join(', ') : undefined },
+          viewOwner,
+        ),
+      };
+    });
   }
 
   private editSizeGroups() {
