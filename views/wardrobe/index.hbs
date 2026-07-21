@@ -129,6 +129,7 @@
     <details class="dropdown">
       <summary class="btn border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800">Size</summary>
       <div class="dropdown-content z-30 mt-2 max-h-96 w-96 overflow-y-auto rounded-lg border border-slate-800 bg-slate-950 p-4 shadow-xl">
+        <a href="{{sizeNoneHref}}" class="mb-3 block rounded-md border border-slate-800 px-4 py-3 text-center text-slate-200 hover:border-emerald-500 hover:bg-emerald-500/15">None</a>
         {{#each dashboardSizeGroups}}
         <h3 class="mb-3 mt-2 font-semibold text-white">{{this.label}}</h3>
         <div class="mb-4 grid grid-cols-2 gap-2">
@@ -141,13 +142,15 @@
     </details>
 
     <select name="color" class="select select-bordered w-36 border-slate-700 bg-slate-900" onchange="this.form.submit()">
-      <option value="">Colour</option>
+      <option value="" {{#unless search.color}}selected{{/unless}} hidden>Colour</option>
+      <option value="">None</option>
       {{#each colors}}
       <option value="{{this}}" {{#ifEquals this ../search.color}}selected{{/ifEquals}}>{{this}}</option>
       {{/each}}
     </select>
     <select name="tag" class="select select-bordered w-36 border-slate-700 bg-slate-900" onchange="this.form.submit()">
-      <option value="">Tags</option>
+      <option value="" {{#unless search.tag}}selected{{/unless}} hidden>Tags</option>
+      <option value="">None</option>
       {{#each availableTags}}
       <option value="{{this}}" {{#ifEquals this ../search.tag}}selected{{/ifEquals}}>{{this}}</option>
       {{/each}}

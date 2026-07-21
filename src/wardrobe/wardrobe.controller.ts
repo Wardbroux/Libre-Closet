@@ -130,6 +130,7 @@ export class WardrobeController {
       colors: Object.values(GarmentColor),
       sizeGroups: SIZE_GROUPS,
       dashboardSizeGroups: this.sizeFilterGroups(query, viewOwner),
+      sizeNoneHref: this.wardrobeUrl(query, { size: undefined }, viewOwner),
       availableSizes: filters.sizes,
       availableLocations: filters.locations,
       allLocationsHref: this.wardrobeUrl(
