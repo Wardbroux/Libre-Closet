@@ -262,7 +262,7 @@
       rootCrumb.type = 'button';
       rootCrumb.textContent = 'All';
       rootCrumb.className = 'hover:text-emerald-300';
-      rootCrumb.addEventListener('click', () => renderCategoryPicker(''));
+      rootCrumb.dataset.categoryBrowse = '';
       categoryBreadcrumbs.appendChild(rootCrumb);
       crumbs.forEach((crumb, index) => {
         categoryBreadcrumbs.append(' / ');
@@ -271,41 +271,55 @@
         button.type = 'button';
         button.textContent = crumb;
         button.className = 'hover:text-emerald-300';
-        button.addEventListener('click', () => renderCategoryPicker(value));
+        button.dataset.categoryBrowse = value;
         categoryBreadcrumbs.appendChild(button);
       });
 
       for (const option of childNodes(parent)) {
         const { label, value } = option;
+        const hasChildren = hasCategoryChildren(value);
         const button = document.createElement('button');
         button.type = 'button';
+        if (hasChildren) button.dataset.categoryBrowse = value;
+        else button.dataset.categorySelect = value;
         button.className = 'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-slate-200 hover:bg-emerald-500/15 hover:text-emerald-200';
         const labelSpan = document.createElement('span');
         labelSpan.textContent = label;
         const arrowSpan = document.createElement('span');
         arrowSpan.className = 'text-slate-500';
-        arrowSpan.textContent = hasCategoryChildren(value) ? '>' : '';
+        arrowSpan.textContent = hasChildren ? '>' : '';
         button.append(labelSpan, arrowSpan);
-        button.addEventListener('click', () => {
-          if (hasCategoryChildren(value)) {
-            renderCategoryPicker(value);
-            return;
-          }
-          categoryInput.value = value;
-          syncCategoryLabel();
-          syncSizeOptions();
-          categoryPanel?.classList.add('hidden');
-        });
         categoryOptions.appendChild(button);
       }
     };
 
-    categoryButton?.addEventListener('click', () => {
+    categoryPanel?.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-category-browse], [data-category-select]');
+      if (!target) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const browseValue = target.dataset.categoryBrowse;
+      if (browseValue !== undefined) {
+        renderCategoryPicker(browseValue);
+        return;
+      }
+      const selectValue = target.dataset.categorySelect;
+      if (!selectValue || !categoryInput) return;
+      categoryInput.value = selectValue;
+      syncCategoryLabel();
+      syncSizeOptions();
+      categoryPanel.classList.add('hidden');
+    });
+
+    categoryButton?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       categoryPanel?.classList.toggle('hidden');
       renderCategoryPicker('');
     });
     document.addEventListener('click', (event) => {
       if (!categoryPanel || categoryPanel.classList.contains('hidden')) return;
+      if (!(event.target instanceof Element)) return;
       if (event.target.closest('#categoryPickerButton') || event.target.closest('#categoryPickerPanel')) return;
       categoryPanel.classList.add('hidden');
       syncCategoryLabel();
