@@ -99,6 +99,11 @@ export class WardrobeController {
       this.garmentService.findAll(userId, query, viewOwner),
       this.garmentService.findAvailableFilters(viewOwner ?? userId),
     ]);
+    const garmentCards = garments.map((garment) =>
+      Object.assign(garment, {
+        galleryPhotos: this.galleryPhotos(garment),
+      }),
+    );
     const availableCategories = filters.categories.map((value) => ({
       value,
       label: this.garmentService.resolveCategoryLabel(value, i18n),
@@ -109,7 +114,7 @@ export class WardrobeController {
       viewOwner,
     );
     return {
-      garments,
+      garments: garmentCards,
       availableCategories,
       categoryGroups: this.categoryGroups(filters.categories),
       categoryPanel,
@@ -360,12 +365,7 @@ export class WardrobeController {
 
     return {
       garment,
-      galleryPhotos: garment.photos
-        .getItems()
-        .map((photo) => {
-          const file = (photo.file as any).unwrap?.() ?? photo.file;
-          return { id: photo.id, fileName: file.fileName };
-        }),
+      galleryPhotos: this.galleryPhotos(garment),
       categoryLabel: this.garmentService.resolveCategoryLabel(
         garment.category,
         i18n,
@@ -591,6 +591,63 @@ export class WardrobeController {
     return reply.send();
   }
 
+  @Post(':id/photos/reorder')
+  async reorderPhotos(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { photoIds?: string | string[] },
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+    @Query('ownerId') ownerId: string | undefined,
+  ) {
+    const userId = this.userId(req);
+    const viewOwner = ownerId ? parseInt(ownerId, 10) : undefined;
+
+    if (userId != null && viewOwner != null && viewOwner !== userId) {
+      const canManage = await this.shareService.canManage(userId, viewOwner);
+      if (!canManage) throw new ForbiddenException();
+    }
+
+    const rawIds = Array.isArray(body.photoIds)
+      ? body.photoIds
+      : (body.photoIds ?? '').split(',');
+    await this.garmentService.reorderGalleryPhotos(
+      id,
+      rawIds.map((value) => parseInt(value, 10)).filter(Number.isFinite),
+      viewOwner ?? userId,
+      userId,
+    );
+    const redirectSuffix = viewOwner ? `?ownerId=${viewOwner}` : '';
+    reply.header('HX-Redirect', `/wardrobe/${id}${redirectSuffix}`);
+    return reply.send({ ok: true });
+  }
+
+  @Post(':id/photos/:photoId/delete')
+  async deletePhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('photoId', ParseIntPipe) photoId: number,
+    @Req() req: FastifyRequest,
+    @Res() reply: FastifyReply,
+    @Query('ownerId') ownerId: string | undefined,
+  ) {
+    const userId = this.userId(req);
+    const viewOwner = ownerId ? parseInt(ownerId, 10) : undefined;
+
+    if (userId != null && viewOwner != null && viewOwner !== userId) {
+      const canManage = await this.shareService.canManage(userId, viewOwner);
+      if (!canManage) throw new ForbiddenException();
+    }
+
+    await this.garmentService.removeGalleryPhoto(
+      id,
+      photoId,
+      viewOwner ?? userId,
+      userId,
+    );
+    const redirectSuffix = viewOwner ? `?ownerId=${viewOwner}` : '';
+    reply.header('HX-Redirect', `/wardrobe/${id}${redirectSuffix}`);
+    return reply.send({ ok: true });
+  }
+
   @Post(':id/archive')
   async archive(
     @Param('id', ParseIntPipe) id: number,
@@ -671,6 +728,17 @@ export class WardrobeController {
       groups.get(group)?.options.push(category);
     }
     return [...groups.values()];
+  }
+
+  private galleryPhotos(garment: any) {
+    return (
+      garment.photos
+        ?.getItems()
+        ?.map((photo) => {
+          const file = (photo.file as any).unwrap?.() ?? photo.file;
+          return { id: photo.id, fileName: file.fileName };
+        }) ?? []
+    );
   }
 
   private categoryPanel(

@@ -410,6 +410,55 @@ export class GarmentService {
     await this.addGarmentPhoto(garment, photo, !garment.photo);
   }
 
+  async reorderGalleryPhotos(
+    id: number,
+    orderedPhotoIds: number[],
+    userId?: number,
+    requestingUserId?: number,
+  ): Promise<void> {
+    const garment = await this.findOne(id, requestingUserId, userId);
+    await garment.photos.init();
+    const photos = garment.photos.getItems();
+    const ordered = orderedPhotoIds
+      .map((photoId) => photos.find((photo) => photo.id === photoId))
+      .filter(Boolean) as GarmentPhoto[];
+    const missing = photos.filter((photo) => !ordered.includes(photo));
+    [...ordered, ...missing].forEach((photo, index) => {
+      photo.position = index;
+    });
+    const first = [...ordered, ...missing][0];
+    garment.photo = first ? (first.file as any) : undefined;
+    await this.garmentRepository.getEntityManager().flush();
+  }
+
+  async removeGalleryPhoto(
+    id: number,
+    photoId: number,
+    userId?: number,
+    requestingUserId?: number,
+  ): Promise<void> {
+    const garment = await this.findOne(id, requestingUserId, userId);
+    await garment.photos.init();
+    const galleryPhoto = garment.photos
+      .getItems()
+      .find((photo) => photo.id === photoId);
+    if (!galleryPhoto) throw new NotFoundException('Photo not found');
+    const oldFile = (galleryPhoto.file as any).unwrap?.() ?? galleryPhoto.file;
+    const oldFileName = oldFile?.fileName;
+    await this.garmentRepository.getEntityManager().remove(galleryPhoto).flush();
+
+    await garment.photos.init(true);
+    const remaining = garment.photos
+      .getItems()
+      .sort((a, b) => a.position - b.position || a.id - b.id);
+    remaining.forEach((photo, index) => {
+      photo.position = index;
+    });
+    garment.photo = remaining[0] ? (remaining[0].file as any) : undefined;
+    await this.garmentRepository.getEntityManager().flush();
+    if (oldFileName) await this.deletePhotoFiles(oldFileName);
+  }
+
   private async storeUploadedPhoto(
     files: AsyncIterableIterator<MultipartFile>,
     userId?: number,

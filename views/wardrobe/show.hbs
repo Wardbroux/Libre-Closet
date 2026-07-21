@@ -38,17 +38,23 @@
 
     <section class="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(390px,0.9fr)]">
       <div class="flex flex-col gap-4">
-        <figure class="relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
+        <figure id="detailPhotoFrame" class="group/photo relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
           {{#if garment.photo}}
           <img id="mainGarmentPhoto" src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain p-6" />
+          <button type="button" data-gallery-prev class="absolute inset-y-0 left-0 flex w-1/4 items-center justify-start bg-gradient-to-r from-slate-950/35 to-transparent pl-4 text-4xl text-white opacity-0 transition hover:opacity-100 group-hover/photo:opacity-70">
+            ‹
+          </button>
+          <button type="button" data-gallery-next class="absolute inset-y-0 right-0 flex w-1/4 items-center justify-end bg-gradient-to-l from-slate-950/35 to-transparent pr-4 text-4xl text-white opacity-0 transition hover:opacity-100 group-hover/photo:opacity-70">
+            ›
+          </button>
           {{else}}
           <div class="flex h-full w-full items-center justify-center text-slate-500">No photo</div>
           {{/if}}
         </figure>
 
-        <div class="grid max-w-xl grid-cols-5 gap-3">
+        <div id="photoThumbList" class="grid max-w-xl grid-cols-5 gap-3">
           {{#each galleryPhotos}}
-          <button type="button" data-photo-thumb data-photo-id="{{this.id}}" data-photo-name="{{this.fileName}}" class="aspect-square rounded-lg border border-slate-700 bg-slate-900 p-2 text-left hover:border-emerald-400 data-[active=true]:border-emerald-400" {{#if @first}}data-active="true"{{/if}}>
+          <button type="button" draggable="true" data-photo-thumb data-photo-id="{{this.id}}" data-photo-name="{{this.fileName}}" class="aspect-square rounded-lg border border-slate-700 bg-slate-900 p-2 text-left hover:border-emerald-400 data-[active=true]:border-emerald-400" {{#if @first}}data-active="true"{{/if}}>
             <img src="/file/nobg/{{this.fileName}}" alt="{{../garment.name}}" class="h-full w-full object-contain" />
           </button>
           {{/each}}
@@ -244,6 +250,7 @@
           <input id="photoYInput" type="range" min="-100" max="100" step="1" value="0" class="range range-sm" />
         </label>
         <div class="mt-auto flex justify-end gap-3">
+          <button type="button" id="photoEditorDelete" class="mr-auto hidden rounded-lg border border-red-500/40 px-4 py-2 font-semibold text-red-300 hover:border-red-300 hover:bg-red-500/15">Remove photo</button>
           <button type="button" id="photoEditorCancel" class="btn btn-ghost">Cancel</button>
           <button type="button" id="photoEditorChoose" class="btn btn-outline border-slate-600">Upload</button>
           <button type="button" id="photoEditorSave" class="btn border-0 bg-emerald-600 text-white hover:bg-emerald-500" disabled>Save photo</button>
@@ -546,8 +553,11 @@
     const photoIdInput = document.getElementById('photoIdInput');
     const uploadForm = document.getElementById('photoUploadForm');
     const mainGarmentPhoto = document.getElementById('mainGarmentPhoto');
+    const photoDelete = document.getElementById('photoEditorDelete');
+    const galleryPhotos = {{{json galleryPhotos}}};
     let activePhotoName = '{{#if garment.photo}}{{garment.photo.fileName}}{{/if}}';
-    let activePhotoId = '';
+    let activePhotoId = galleryPhotos[0]?.id ? String(galleryPhotos[0].id) : '';
+    let activePhotoIndex = 0;
     let photoImage = null;
     let photoObjectUrl = '';
     let photoDragging = false;
@@ -595,8 +605,20 @@
       setPhotoStatus('Frame the photo, then save it.');
       drawPhotoPreview();
     };
+    const selectGalleryPhoto = (index) => {
+      if (!galleryPhotos.length) return;
+      activePhotoIndex = (index + galleryPhotos.length) % galleryPhotos.length;
+      const photo = galleryPhotos[activePhotoIndex];
+      activePhotoName = photo.fileName;
+      activePhotoId = String(photo.id);
+      for (const thumb of document.querySelectorAll('[data-photo-thumb]')) {
+        thumb.dataset.active = String(thumb.dataset.photoId === activePhotoId);
+      }
+      if (mainGarmentPhoto) mainGarmentPhoto.src = `/file/nobg/${activePhotoName}`;
+    };
     const openPhotoModal = async ({ existing = false, photoName = '', photoId = '' } = {}) => {
       if (photoIdInput) photoIdInput.value = photoId;
+      if (photoDelete) photoDelete.classList.toggle('hidden', !photoId);
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
       setPhotoStatus(existing ? 'Loading current photo...' : 'Upload or drag a photo, then frame it.');
@@ -653,12 +675,13 @@
       activePhotoId = '';
       openPhotoModal();
     });
-    for (const thumb of document.querySelectorAll('[data-photo-thumb]')) {
+    for (const [index, thumb] of [...document.querySelectorAll('[data-photo-thumb]')].entries()) {
       thumb.addEventListener('click', () => {
         const photoName = thumb.dataset.photoName || '';
         const photoId = thumb.dataset.photoId || '';
         activePhotoName = photoName;
         activePhotoId = photoId;
+        activePhotoIndex = galleryPhotos.findIndex((photo) => String(photo.id) === photoId);
         for (const other of document.querySelectorAll('[data-photo-thumb]')) {
           other.dataset.active = String(other === thumb);
         }
@@ -668,10 +691,51 @@
         if (document.body.dataset.itemEditing !== 'true') return;
         openPhotoModal({ existing: true, photoName, photoId });
       });
+      thumb.addEventListener('dragstart', (event) => {
+        if (document.body.dataset.itemEditing !== 'true') {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer?.setData('text/plain', thumb.dataset.photoId || '');
+      });
+      thumb.addEventListener('dragover', (event) => {
+        if (document.body.dataset.itemEditing !== 'true') return;
+        event.preventDefault();
+      });
+      thumb.addEventListener('drop', async (event) => {
+        if (document.body.dataset.itemEditing !== 'true') return;
+        event.preventDefault();
+        const draggedId = event.dataTransfer?.getData('text/plain');
+        if (!draggedId || draggedId === thumb.dataset.photoId) return;
+        const list = document.getElementById('photoThumbList');
+        const dragged = list?.querySelector(`[data-photo-id="${CSS.escape(draggedId)}"]`);
+        if (!list || !dragged) return;
+        list.insertBefore(dragged, thumb);
+        const photoIds = [...list.querySelectorAll('[data-photo-thumb]')].map((item) => item.dataset.photoId);
+        await fetch('/wardrobe/{{garment.id}}/photos/reorder{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ photoIds: photoIds.join(',') }),
+        });
+        window.location.reload();
+      });
     }
+    document.querySelector('[data-gallery-prev]')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      selectGalleryPhoto(activePhotoIndex - 1);
+    });
+    document.querySelector('[data-gallery-next]')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      selectGalleryPhoto(activePhotoIndex + 1);
+    });
     document.querySelector('[data-photo-edit-open="true"]')?.addEventListener('click', () => {
       if (document.body.dataset.itemEditing !== 'true') return;
       openPhotoModal({ existing: true, photoName: activePhotoName, photoId: activePhotoId });
+    });
+    photoDelete?.addEventListener('click', async () => {
+      if (!activePhotoId || !confirm('Remove this photo?')) return;
+      await fetch(`/wardrobe/{{garment.id}}/photos/${activePhotoId}/delete{{#if viewOwner}}?ownerId={{viewOwner}}{{/if}}`, { method: 'POST' });
+      window.location.reload();
     });
     photoChoose?.addEventListener('click', () => photoFileInput?.click());
     photoDropZone?.addEventListener('click', (event) => {
