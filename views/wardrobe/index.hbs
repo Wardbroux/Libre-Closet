@@ -256,15 +256,25 @@
       const grid = document.getElementById('wardrobeGrid');
       if (!slider || !grid) return;
       const stored = localStorage.getItem('wardrobeCardMin');
-      const mobileDefault = window.matchMedia('(max-width: 640px)').matches ? '180' : slider.value;
+      const isMobile = window.matchMedia('(max-width: 640px)').matches;
+      const mobileDefault = '180';
       const setSize = (value) => {
         const size = Math.max(180, Math.min(620, Number(value) || 320));
         slider.value = String(size);
         grid.style.setProperty('--wardrobe-card-min', `${size}px`);
-        localStorage.setItem('wardrobeCardMin', String(size));
+        if (!isMobile) localStorage.setItem('wardrobeCardMin', String(size));
       };
-      setSize(stored || mobileDefault);
+      setSize(isMobile ? mobileDefault : stored || slider.value);
       slider.addEventListener('input', () => setSize(slider.value));
+    })();
+    (() => {
+      const header = document.querySelector('.dashboard-header');
+      if (!header) return;
+      const sync = () => {
+        header.classList.toggle('is-scrolled', window.scrollY > 26);
+      };
+      sync();
+      window.addEventListener('scroll', sync, { passive: true });
     })();
     (() => {
       for (const frame of document.querySelectorAll('[data-card-gallery]')) {
