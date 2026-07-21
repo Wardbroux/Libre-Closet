@@ -636,6 +636,7 @@
     let photoObjectUrl = '';
     let photoDragging = false;
     let lastPointer = null;
+    let photoHasBackgroundRemoved = false;
     const activePointers = new Map();
     let pinchStartDistance = 0;
     let pinchStartZoom = 1;
@@ -709,6 +710,8 @@
       if (photoCameraInput) photoCameraInput.value = '';
       if (photoFilesInput) photoFilesInput.value = '';
       if (uploadInput) uploadInput.value = '';
+      if (photoIdInput) photoIdInput.value = '';
+      photoHasBackgroundRemoved = false;
       photoDropHint?.classList.remove('hidden');
       photoCanvas?.classList.add('hidden');
       if (photoCanvas) {
@@ -757,20 +760,25 @@
       if (existing && photoName) {
         const response = await fetch(`/file/nobg/${photoName}`);
         await loadPhotoBlob(await response.blob());
+        photoHasBackgroundRemoved = true;
       }
     };
     const closePhotoModal = () => {
       photoModal?.classList.add('hidden');
       photoModal?.classList.remove('flex');
     };
-    const exportPhotoFile = async () => {
+    const exportPhotoFile = async ({ transparent = false } = {}) => {
       if (!photoImage) return null;
       const canvas = document.createElement('canvas');
       canvas.width = 1400;
       canvas.height = 1400;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (!transparent) {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
       drawImageToCanvas(ctx, canvas, photoImage);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
       return new File([blob], 'garment-photo.png', { type: 'image/png' });
@@ -780,17 +788,24 @@
         uploadInput?.addEventListener('photo-processing-complete', resolve, { once: true });
       });
     const submitEditedPhoto = async () => {
-      const file = await exportPhotoFile();
+      const file = await exportPhotoFile({ transparent: photoHasBackgroundRemoved });
       if (!file || !uploadInput || !uploadForm) return;
-      setPhotoStatus('Removing background... this can take a little while.');
+      setPhotoStatus(photoHasBackgroundRemoved ? 'Uploading photo...' : 'Removing background... this can take a little while.');
       if (photoSave) photoSave.disabled = true;
-      uploadInput.dataset.skipMaskEditor = 'true';
       const dt = new DataTransfer();
       dt.items.add(file);
       uploadInput.files = dt.files;
-      const processing = waitForPhotoProcessing();
-      uploadInput.dispatchEvent(new Event('change'));
-      await processing;
+      if (photoHasBackgroundRemoved) {
+        const nobgDt = new DataTransfer();
+        nobgDt.items.add(new File([file], 'nobg.png', { type: 'image/png' }));
+        const nobgInput = document.getElementById('nobgPhotoInput');
+        if (nobgInput) nobgInput.files = nobgDt.files;
+      } else {
+        uploadInput.dataset.skipMaskEditor = 'true';
+        const processing = waitForPhotoProcessing();
+        uploadInput.dispatchEvent(new Event('change'));
+        await processing;
+      }
       setPhotoStatus('Uploading photo...');
       closePhotoModal();
       sessionStorage.setItem('libreClosetReturnToEdit', 'true');
@@ -886,6 +901,8 @@
         if (mainGarmentPhoto && activePhotoName) mainGarmentPhoto.src = objectUrl;
         const thumbImg = document.querySelector(`[data-photo-id="${CSS.escape(activePhotoId)}"] img`);
         if (thumbImg) thumbImg.src = objectUrl;
+        await loadPhotoBlob(editedBlob);
+        photoHasBackgroundRemoved = true;
         setPhotoStatus('Mask updated.');
       } catch (err) {
         console.warn('[mask-editor] Failed:', err);
