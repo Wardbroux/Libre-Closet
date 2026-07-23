@@ -296,6 +296,7 @@
       }
     };
     categoryPanel?.addEventListener('click', (event) => {
+      if (!(event.target instanceof Element)) return;
       const target = event.target.closest('[data-category-browse], [data-category-select]');
       if (!target) return;
       event.preventDefault();
@@ -355,6 +356,7 @@
       colorPanel.classList.toggle('hidden');
     });
     colorPanel?.addEventListener('click', (event) => {
+      if (!(event.target instanceof Element)) return;
       const option = event.target.closest('.color-option');
       if (!option) return;
       event.preventDefault();
@@ -395,6 +397,7 @@
       syncTags();
     };
     tagPicker?.addEventListener('click', (event) => {
+      if (!(event.target instanceof Element)) return;
       const button = event.target.closest('.tag-toggle');
       if (!button) return;
       const tag = button.dataset.tag;

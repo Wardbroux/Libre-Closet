@@ -324,6 +324,7 @@
       };
 
       panel.addEventListener('click', (event) => {
+        if (!(event.target instanceof Element)) return;
         const target = event.target.closest('[data-category-browse], [data-category-select]');
         if (!target) return;
         event.preventDefault();
@@ -345,6 +346,7 @@
 
       document.addEventListener('click', (event) => {
         if (panel.classList.contains('hidden')) return;
+        if (!(event.target instanceof Element)) return;
         if (event.target.closest('#dashboardCategoryButton') || event.target.closest('#dashboardCategoryPanel')) return;
         panel.classList.add('hidden');
         label.textContent = categoryInput.value || 'Category';
