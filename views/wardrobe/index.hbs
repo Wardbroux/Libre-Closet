@@ -206,7 +206,7 @@
         </span>
         {{/if}}
         {{#if this.photo}}
-        <img data-card-photo src="/file/nobg/{{this.photo.fileName}}" alt="{{this.name}}" class="h-full w-full object-contain p-5 transition group-hover:scale-[1.02]" />
+        <img data-card-photo data-card-photo-name="{{this.photo.fileName}}" src="/file/nobg/{{this.photo.fileName}}" alt="{{this.name}}" class="h-full w-full object-contain p-5 transition group-hover:scale-[1.02]" onerror="this.onerror=null; this.src='/file/' + this.dataset.cardPhotoName;" />
         <button type="button" data-card-prev class="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-slate-950/55 text-white opacity-0 shadow-lg shadow-black/30 backdrop-blur transition hover:border-white/40 hover:bg-slate-950/80 hover:opacity-100 group-hover/card-photo:opacity-70">
           <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="m15 18-6-6 6-6" />
@@ -401,6 +401,11 @@
         }
         const show = (nextIndex) => {
           index = (nextIndex + photos.length) % photos.length;
+          img.dataset.cardPhotoName = photos[index].fileName;
+          img.onerror = () => {
+            img.onerror = null;
+            img.src = `/file/${photos[index].fileName}`;
+          };
           img.src = `/file/nobg/${photos[index].fileName}`;
         };
         prev?.addEventListener('click', (event) => {

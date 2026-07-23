@@ -154,9 +154,10 @@ export class GarmentService {
   }
 
   async create(dto: CreateGarmentDto, userId?: number): Promise<Garment> {
-    const photo = dto.files
-      ? await this.storeUploadedPhoto(dto.files, userId)
-      : undefined;
+    const photos = dto.files
+      ? await this.storeUploadedPhotos(dto.files, userId)
+      : [];
+    const photo = photos[0];
 
     const garment = this.garmentRepository.create({
       name: dto.name,
@@ -178,7 +179,9 @@ export class GarmentService {
     }
 
     await this.garmentRepository.getEntityManager().persistAndFlush(garment);
-    if (photo) await this.addGarmentPhoto(garment, photo, true);
+    for (const [index, item] of photos.entries()) {
+      await this.addGarmentPhoto(garment, item, index === 0);
+    }
     return garment;
   }
 
@@ -495,6 +498,56 @@ export class GarmentService {
       nobgPromise ?? Promise.resolve(),
     ]);
     return photo;
+  }
+
+  private async storeUploadedPhotos(
+    files: AsyncIterableIterator<MultipartFile>,
+    userId?: number,
+  ): Promise<File[]> {
+    const uploads: {
+      fileName: string;
+      photoPromise?: Promise<File>;
+      nobgPromise?: Promise<void>;
+    }[] = [];
+    let nextNobgIndex = 0;
+
+    for await (const file of files) {
+      if (file.fieldname === 'photo') {
+        const fileName = `${randomUUID()}.webp`;
+        uploads.push({
+          fileName,
+          photoPromise: this.fileService.storeImageFromFileUpload(
+            file,
+            userId,
+            fileName,
+          ),
+        });
+      } else if (file.fieldname === 'nobgPhoto') {
+        const upload = uploads[nextNobgIndex];
+        nextNobgIndex += 1;
+        if (!upload) {
+          file.file.resume();
+          continue;
+        }
+        upload.nobgPromise = this.fileService.storeNobgVariantFromStream(
+          file.file,
+          upload.fileName,
+        );
+      } else {
+        file.file.resume();
+      }
+    }
+
+    const photos: File[] = [];
+    for (const upload of uploads) {
+      if (!upload.photoPromise) continue;
+      const [photo] = await Promise.all([
+        upload.photoPromise,
+        upload.nobgPromise ?? Promise.resolve(),
+      ]);
+      photos.push(photo);
+    }
+    return photos;
   }
 
   private async addGarmentPhoto(

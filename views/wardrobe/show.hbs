@@ -40,7 +40,7 @@
       <div class="detail-photo-column flex flex-col gap-4">
         <figure id="detailPhotoFrame" class="detail-photo-frame group/photo relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
           {{#if garment.photo}}
-          <img id="mainGarmentPhoto" src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain p-6" />
+          <img id="mainGarmentPhoto" data-photo-name="{{garment.photo.fileName}}" src="/file/nobg/{{garment.photo.fileName}}" alt="{{garment.name}}" class="h-full w-full object-contain p-6" onerror="this.onerror=null; this.src='/file/' + this.dataset.photoName;" />
           <button type="button" data-gallery-prev class="absolute inset-y-0 left-0 flex w-1/4 items-center justify-start bg-gradient-to-r from-slate-950/35 to-transparent pl-4 text-white opacity-0 transition hover:opacity-100 group-hover/photo:opacity-70">
             <span class="flex size-10 items-center justify-center rounded-full border border-white/15 bg-slate-950/55 shadow-lg shadow-black/30 backdrop-blur">
               <svg aria-hidden="true" viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -63,7 +63,7 @@
         <div id="photoThumbList" class="detail-thumbs grid max-w-xl grid-cols-5 gap-3">
           {{#each galleryPhotos}}
           <button type="button" draggable="true" data-photo-thumb data-photo-id="{{this.id}}" data-photo-name="{{this.fileName}}" class="aspect-square rounded-lg border border-slate-700 bg-slate-900 p-2 text-left hover:border-emerald-400 data-[active=true]:border-emerald-400" {{#if @first}}data-active="true"{{/if}}>
-            <img src="/file/nobg/{{this.fileName}}" alt="{{../garment.name}}" class="h-full w-full object-contain" />
+            <img data-thumb-photo-name="{{this.fileName}}" src="/file/nobg/{{this.fileName}}" alt="{{../garment.name}}" class="h-full w-full object-contain" onerror="this.onerror=null; this.src='/file/' + this.dataset.thumbPhotoName;" />
           </button>
           {{/each}}
           {{#if canEdit}}
@@ -741,7 +741,14 @@
       for (const thumb of document.querySelectorAll('[data-photo-thumb]')) {
         thumb.dataset.active = String(thumb.dataset.photoId === activePhotoId);
       }
-      if (mainGarmentPhoto) mainGarmentPhoto.src = `/file/nobg/${activePhotoName}`;
+      if (mainGarmentPhoto) {
+        mainGarmentPhoto.dataset.photoName = activePhotoName;
+        mainGarmentPhoto.onerror = () => {
+          mainGarmentPhoto.onerror = null;
+          mainGarmentPhoto.src = `/file/${activePhotoName}`;
+        };
+        mainGarmentPhoto.src = `/file/nobg/${activePhotoName}`;
+      }
     };
     const syncGalleryOrderFromThumbs = () => {
       const orderedIds = [...document.querySelectorAll('[data-photo-thumb]')].map((item) => String(item.dataset.photoId));
@@ -833,6 +840,11 @@
           other.dataset.active = String(other === thumb);
         }
         if (mainGarmentPhoto && photoName) {
+          mainGarmentPhoto.dataset.photoName = photoName;
+          mainGarmentPhoto.onerror = () => {
+            mainGarmentPhoto.onerror = null;
+            mainGarmentPhoto.src = `/file/${photoName}`;
+          };
           mainGarmentPhoto.src = `/file/nobg/${photoName}`;
         }
         if (document.body.dataset.itemEditing !== 'true') return;

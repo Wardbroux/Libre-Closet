@@ -33,8 +33,8 @@
         <div class="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_160px]">
           <div>
             <div class="mb-3 text-slate-300">Photo</div>
-            <div id="newPhotoPreview" class="hidden aspect-square w-full max-w-xl overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl shadow-black/30">
-              <img id="newPhotoPreviewImg" alt="" class="h-full w-full object-contain" />
+            <div id="newPhotoPreview" class="hidden w-full max-w-xl rounded-lg border border-slate-700 bg-slate-900 p-3 shadow-2xl shadow-black/30">
+              <div id="newPhotoList" class="grid grid-cols-2 gap-3 sm:grid-cols-3"></div>
             </div>
           </div>
           <div class="flex flex-col items-start gap-3 lg:items-end lg:self-end">
@@ -42,8 +42,8 @@
               <span class="text-3xl leading-none">+</span>
               Add photo
             </button>
-            <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp" />
-            <input type="file" id="photoInput" name="photo" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+            <input type="file" id="photoInput" name="photo" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" multiple />
+            <input type="file" id="nobgPhotoInput" name="nobgPhoto" class="hidden" accept="image/webp,image/png" multiple />
             <button id="photoBtn" type="button" class="hidden" disabled>Prepare photo</button>
             <p id="newPhotoStatus" class="mt-2 text-sm text-slate-500"></p>
           </div>
@@ -430,7 +430,7 @@
     const uploadInput = document.getElementById('photoInput');
     const nobgInput = document.getElementById('nobgPhotoInput');
     const newPhotoPreview = document.getElementById('newPhotoPreview');
-    const newPhotoPreviewImg = document.getElementById('newPhotoPreviewImg');
+    const newPhotoList = document.getElementById('newPhotoList');
     const newPhotoStatus = document.getElementById('newPhotoStatus');
     let photoImage = null;
     let photoObjectUrl = '';
@@ -439,6 +439,7 @@
     const activePointers = new Map();
     let pinchStartDistance = 0;
     let pinchStartZoom = 1;
+    const pendingPhotos = [];
 
     const setPhotoStatus = (text) => {
       if (photoStatus) photoStatus.textContent = text;
@@ -500,7 +501,24 @@
       setPhotoStatus('Frame the photo, then save it.');
       drawPhotoPreview();
     };
+    const resetPhotoEditor = () => {
+      photoImage = null;
+      if (photoObjectUrl) URL.revokeObjectURL(photoObjectUrl);
+      photoObjectUrl = '';
+      if (photoFileInput) photoFileInput.value = '';
+      if (photoCameraInput) photoCameraInput.value = '';
+      if (photoFilesInput) photoFilesInput.value = '';
+      photoDropHint?.classList.remove('hidden');
+      photoCanvas?.classList.add('hidden');
+      if (photoCanvas) {
+        const ctx = photoCanvas.getContext('2d');
+        ctx?.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+      }
+      if (photoSave) photoSave.disabled = true;
+      resetPhotoControls();
+    };
     const openPhotoModal = () => {
+      resetPhotoEditor();
       photoModal?.classList.remove('hidden');
       photoModal?.classList.add('flex');
       setPhotoStatus('Choose camera, gallery, files, or drag a photo.');
@@ -509,6 +527,10 @@
       photoModal?.classList.add('hidden');
       photoModal?.classList.remove('flex');
     };
+    photoModal?.addEventListener('click', (event) => {
+      if (event.target !== photoModal) return;
+      closePhotoModal();
+    });
     const exportPhotoFile = async () => {
       if (!photoImage) return null;
       const canvas = document.createElement('canvas');
@@ -520,6 +542,52 @@
       drawImageToCanvas(ctx, canvas, photoImage);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
       return new File([blob], 'garment-photo.png', { type: 'image/png' });
+    };
+    const syncPendingPhotoInputs = () => {
+      if (!uploadInput || !nobgInput) return;
+      const photoDt = new DataTransfer();
+      const nobgDt = new DataTransfer();
+      for (const pending of pendingPhotos) {
+        photoDt.items.add(pending.photoFile);
+        if (pending.nobgFile) nobgDt.items.add(pending.nobgFile);
+      }
+      uploadInput.files = photoDt.files;
+      nobgInput.files = nobgDt.files;
+    };
+    const renderPendingPhotos = () => {
+      if (!newPhotoList) return;
+      newPhotoList.innerHTML = '';
+      pendingPhotos.forEach((pending, index) => {
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'group relative aspect-square overflow-hidden rounded-lg border border-slate-700 bg-slate-950';
+        tile.title = 'Remove photo';
+        const img = document.createElement('img');
+        img.src = pending.previewUrl;
+        img.alt = '';
+        img.className = 'h-full w-full object-contain p-2';
+        const badge = document.createElement('span');
+        badge.className = 'absolute left-2 top-2 rounded-md bg-slate-950/80 px-2 py-0.5 text-xs text-slate-200';
+        badge.textContent = index === 0 ? 'Main' : String(index + 1);
+        const remove = document.createElement('span');
+        remove.className = 'absolute right-2 top-2 rounded-md bg-red-500/90 px-2 py-0.5 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100';
+        remove.textContent = 'Remove';
+        tile.append(img, badge, remove);
+        tile.addEventListener('click', () => {
+          const [removed] = pendingPhotos.splice(index, 1);
+          if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+          renderPendingPhotos();
+          syncPendingPhotoInputs();
+          if (newPhotoStatus) {
+            newPhotoStatus.textContent = pendingPhotos.length
+              ? `${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'} ready.`
+              : '';
+          }
+          newPhotoPreview?.classList.toggle('hidden', pendingPhotos.length === 0);
+        });
+        newPhotoList.appendChild(tile);
+      });
+      newPhotoPreview?.classList.toggle('hidden', pendingPhotos.length === 0);
     };
     const waitForPhotoProcessing = () =>
       new Promise((resolve) => {
@@ -537,10 +605,18 @@
       const processing = waitForPhotoProcessing();
       uploadInput.dispatchEvent(new Event('change'));
       await processing;
-      const previewFile = nobgInput?.files?.[0] || file;
-      if (newPhotoPreviewImg) newPhotoPreviewImg.src = URL.createObjectURL(previewFile);
-      newPhotoPreview?.classList.remove('hidden');
-      if (newPhotoStatus) newPhotoStatus.textContent = nobgInput?.files?.length ? 'Photo ready with background removed.' : 'Photo ready.';
+      const nobgFile = nobgInput?.files?.[0];
+      const previewFile = nobgFile || file;
+      pendingPhotos.push({
+        photoFile: file,
+        nobgFile,
+        previewUrl: URL.createObjectURL(previewFile),
+      });
+      syncPendingPhotoInputs();
+      renderPendingPhotos();
+      if (newPhotoStatus) {
+        newPhotoStatus.textContent = `${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'} ready${nobgFile ? ' with background removed' : ''}.`;
+      }
       closePhotoModal();
       if (photoSave) photoSave.disabled = false;
     };
@@ -640,6 +716,9 @@
       categoryButton?.focus();
       categoryPanel?.classList.remove('hidden');
       renderCategoryPicker('');
+    });
+    document.getElementById('garmentForm')?.addEventListener('submit', () => {
+      syncPendingPhotoInputs();
     });
     syncCategoryLabel();
     syncSizeOptions();
