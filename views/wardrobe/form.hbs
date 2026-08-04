@@ -592,36 +592,56 @@
       });
       newPhotoPreview?.classList.toggle('hidden', pendingPhotos.length === 0);
     };
-    const waitForPhotoProcessing = () =>
+    const waitForPhotoProcessing = (timeoutMs = 45000) =>
       new Promise((resolve) => {
-        uploadInput?.addEventListener('photo-processing-complete', resolve, { once: true });
+        let settled = false;
+        const finish = (completed) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+          uploadInput?.removeEventListener('photo-processing-complete', onComplete);
+          resolve(completed);
+        };
+        const onComplete = () => finish(true);
+        const timeout = setTimeout(() => finish(false), timeoutMs);
+        uploadInput?.addEventListener('photo-processing-complete', onComplete, { once: true });
       });
     const preparePhoto = async () => {
-      const file = await exportPhotoFile();
-      if (!file || !uploadInput) return;
-      setPhotoStatus('Removing background... this can take a little while.');
-      if (photoSave) photoSave.disabled = true;
-      uploadInput.dataset.skipMaskEditor = 'true';
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      uploadInput.files = dt.files;
-      const processing = waitForPhotoProcessing();
-      uploadInput.dispatchEvent(new Event('change'));
-      await processing;
-      const nobgFile = nobgInput?.files?.[0];
-      const previewFile = nobgFile || file;
-      pendingPhotos.push({
-        photoFile: file,
-        nobgFile,
-        previewUrl: URL.createObjectURL(previewFile),
-      });
-      syncPendingPhotoInputs();
-      renderPendingPhotos();
-      if (newPhotoStatus) {
-        newPhotoStatus.textContent = `${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'} ready${nobgFile ? ' with background removed' : ''}.`;
+      try {
+        const file = await exportPhotoFile();
+        if (!file || !uploadInput) return;
+        setPhotoStatus('Removing background... this can take a little while.');
+        if (photoSave) photoSave.disabled = true;
+        uploadInput.dataset.skipMaskEditor = 'true';
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        uploadInput.files = dt.files;
+        const processing = waitForPhotoProcessing();
+        uploadInput.dispatchEvent(new Event('change'));
+        const completed = await processing;
+        const nobgFile = completed ? nobgInput?.files?.[0] : undefined;
+        const previewFile = nobgFile || file;
+        pendingPhotos.push({
+          photoFile: file,
+          nobgFile,
+          previewUrl: URL.createObjectURL(previewFile),
+        });
+        syncPendingPhotoInputs();
+        renderPendingPhotos();
+        if (newPhotoStatus) {
+          newPhotoStatus.textContent = completed
+            ? `${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'} ready${nobgFile ? ' with background removed' : ''}.`
+            : `${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'} ready. Background removal timed out, so the app will use the original photo.`;
+        }
+        closePhotoModal();
+      } catch (err) {
+        console.warn('[photo-editor] Could not prepare photo:', err);
+        setPhotoStatus('Could not prepare this photo. Try Upload again or choose another image.');
+        if (newPhotoStatus) newPhotoStatus.textContent = 'Could not prepare that photo.';
+      } finally {
+        syncPendingPhotoInputs();
+        if (photoSave) photoSave.disabled = !photoImage;
       }
-      closePhotoModal();
-      if (photoSave) photoSave.disabled = false;
     };
     document.getElementById('addPhotoButton')?.addEventListener('click', openPhotoModal);
     photoUpload?.addEventListener('click', () => photoFileInput?.click());
@@ -713,15 +733,35 @@
       if (!event.target.closest('#categoryPickerButton, #categoryPickerPanel')) categoryPanel?.classList.add('hidden');
       if (!event.target.closest('#colorPickerButton, #colorPickerPanel')) colorPanel?.classList.add('hidden');
     });
-    document.getElementById('garmentForm')?.addEventListener('submit', (event) => {
+    const garmentForm = document.getElementById('garmentForm');
+    const garmentSubmitButton = garmentForm?.querySelector('button[type="submit"]');
+    garmentForm?.addEventListener('submit', (event) => {
       if (categoryInput?.value) return;
       event.preventDefault();
+      if (newPhotoStatus) newPhotoStatus.textContent = 'Choose a category before saving.';
       categoryButton?.focus();
       categoryPanel?.classList.remove('hidden');
       renderCategoryPicker('');
     });
-    document.getElementById('garmentForm')?.addEventListener('submit', () => {
+    garmentForm?.addEventListener('submit', (event) => {
+      if (event.defaultPrevented) return;
       syncPendingPhotoInputs();
+      if (garmentSubmitButton) {
+        garmentSubmitButton.disabled = true;
+        garmentSubmitButton.textContent = 'Saving...';
+      }
+      if (newPhotoStatus) {
+        newPhotoStatus.textContent = pendingPhotos.length
+          ? `Saving ${pendingPhotos.length} photo${pendingPhotos.length === 1 ? '' : 's'}...`
+          : 'Saving item...';
+      }
+      setTimeout(() => {
+        if (newPhotoStatus) newPhotoStatus.textContent = 'Still saving. If this stays here, check the connection and try again.';
+        if (garmentSubmitButton) {
+          garmentSubmitButton.disabled = false;
+          garmentSubmitButton.textContent = 'Save item';
+        }
+      }, 60000);
     });
     syncCategoryLabel();
     syncSizeOptions();
